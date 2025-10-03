@@ -18,7 +18,14 @@
     "build": "node scripts/build-electron.js && vite build",
     "build:electron": "node scripts/build-electron.js",
     "build:renderer": "vite build",
+    "build:prod": "node scripts/generate-sounds.js && node scripts/generate-icons.js && node scripts/build-electron.js && vite build",
     "preview": "electron-vite preview",
+    "pack": "npm run build:prod && electron-builder --dir",
+    "dist": "npm run build:prod && electron-builder",
+    "dist:win": "npm run build:prod && electron-builder --win",
+    "dist:mac": "npm run build:prod && electron-builder --mac",
+    "dist:linux": "npm run build:prod && electron-builder --linux",
+    "dist:all": "npm run build:prod && electron-builder -mwl",
     "test": "vitest",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
@@ -26,8 +33,96 @@
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\""
   },
+  "build": {
+    "appId": "com.ricardopera.pomodoro-focus",
+    "productName": "Pomodoro Focus",
+    "copyright": "Copyright © 2025 Ricardo Pera",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "public/**/*",
+      "index.html",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "public/icons",
+        "to": "icons",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "public/sounds",
+        "to": "sounds",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icons/app-icon.png",
+      "publisherName": "Ricardo Pera",
+      "verifyUpdateCodeSignature": false,
+      "sign": null,
+      "signingHashAlgorithms": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pomodoro Focus",
+      "installerIcon": "public/icons/app-icon.png",
+      "uninstallerIcon": "public/icons/app-icon.png"
+    },
+    "portable": {
+      "artifactName": "PomodoroFocus-Portable-${version}.exe"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "public/icons/app-icon.png",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "title": "Pomodoro Focus ${version}",
+      "icon": "public/icons/app-icon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/icons",
+      "category": "Utility",
+      "maintainer": "Ricardo Pera <ricardo@example.com>",
+      "vendor": "Ricardo Pera",
+      "synopsis": "Modern Pomodoro Timer",
+      "description": "A modern Pomodoro timer desktop app built with Electron, React and TypeScript"
+    }
+  },
   "dependencies": {
-    "electron": "^28.3.3",
     "electron-store": "^8.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -43,6 +138,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.7.0",
     "@vitest/ui": "^1.6.1",
+    "electron": "^28.3.3",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
     "esbuild": "^0.25.10",

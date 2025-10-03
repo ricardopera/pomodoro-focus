@@ -4,3 +4,7 @@ node_modules
 .github
 .specify
 specs
+
+# Build outputs
+dist
+release
