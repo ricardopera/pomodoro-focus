@@ -1,4 +1,5 @@
 import { app, Tray, Menu, nativeImage, BrowserWindow } from 'electron';
+import path from 'path';
 import type { AppState } from '@shared/types';
 
 let tray: Tray | null = null;
@@ -7,7 +8,7 @@ let mainWindow: BrowserWindow | null = null;
 export function createTray(window: BrowserWindow): Tray {
   mainWindow = window;
 
-  // Create tray icon (will need actual icon file later)
+  // Create tray icon using PNG file
   const icon = createTrayIcon();
   tray = new Tray(icon);
 
@@ -87,23 +88,16 @@ export function destroyTray(): void {
 }
 
 function createTrayIcon(): Electron.NativeImage {
-  // Use the SVG icon from public/icons
-  // For better quality on all platforms
-  const iconSvg = `
-    <svg width="64" height="64" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="64" cy="64" r="60" fill="#E74C3C" stroke="#C0392B" stroke-width="4"/>
-      <path d="M 64 10 Q 50 15 45 25 Q 55 20 64 20 Q 73 20 83 25 Q 78 15 64 10 Z" fill="#27AE60" stroke="#229954" stroke-width="2"/>
-      <circle cx="64" cy="64" r="45" fill="none" stroke="white" stroke-width="3" opacity="0.3"/>
-      <path d="M 64 19 A 45 45 0 0 1 109 64 L 64 64 Z" fill="white" opacity="0.5"/>
-      <line x1="64" y1="64" x2="64" y2="35" stroke="white" stroke-width="4" stroke-linecap="round"/>
-      <line x1="64" y1="64" x2="85" y2="64" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="64" cy="64" r="5" fill="white"/>
-    </svg>
-  `;
+  // Use PNG icon for better Windows compatibility
+  // Tray icons should be 16x16 or 32x32 on Windows
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icons', 'app-icon.png')
+    : path.join(__dirname, '../../public/icons/app-icon.png');
 
-  return nativeImage.createFromDataURL(
-    `data:image/svg+xml;base64,${Buffer.from(iconSvg).toString('base64')}`
-  );
+  const icon = nativeImage.createFromPath(iconPath);
+  
+  // Resize to tray size (Windows expects 16x16)
+  return icon.resize({ width: 16, height: 16 });
 }
 
 function formatState(state: AppState['currentState']): string {
