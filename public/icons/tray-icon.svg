@@ -1,0 +1,20 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#E74C3C" stroke="#C0392B" stroke-width="4"/>
+  
+  <!-- Tomato leaf -->
+  <path d="M 64 10 Q 50 15 45 25 Q 55 20 64 20 Q 73 20 83 25 Q 78 15 64 10 Z" fill="#27AE60" stroke="#229954" stroke-width="2"/>
+  
+  <!-- Timer segments (Pomodoro divided into 4 quarters) -->
+  <circle cx="64" cy="64" r="45" fill="none" stroke="white" stroke-width="3" opacity="0.3"/>
+  
+  <!-- Active quarter (top-right) -->
+  <path d="M 64 19 A 45 45 0 0 1 109 64 L 64 64 Z" fill="white" opacity="0.5"/>
+  
+  <!-- Clock hands -->
+  <line x1="64" y1="64" x2="64" y2="35" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <line x1="64" y1="64" x2="85" y2="64" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="5" fill="white"/>
+</svg>

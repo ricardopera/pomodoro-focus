@@ -1,0 +1,67 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with shadow -->
+  <defs>
+    <radialGradient id="shadowGrad" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#000;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="tomatoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E74C3C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#51CF66;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#27AE60;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shadow -->
+  <ellipse cx="128" cy="240" rx="80" ry="16" fill="url(#shadowGrad)" />
+  
+  <!-- Main tomato body -->
+  <circle cx="128" cy="128" r="100" fill="url(#tomatoGrad)" stroke="#C0392B" stroke-width="6"/>
+  
+  <!-- Highlight -->
+  <ellipse cx="100" cy="90" rx="30" ry="35" fill="white" opacity="0.3"/>
+  
+  <!-- Tomato leaves (5 leaves) -->
+  <g transform="translate(128, 28)">
+    <!-- Center leaf -->
+    <path d="M 0 0 Q -5 -15 0 -25 Q 5 -15 0 0 Z" fill="url(#leafGrad)" stroke="#229954" stroke-width="2"/>
+    
+    <!-- Left leaves -->
+    <path d="M -10 0 Q -20 -10 -25 -18 Q -18 -12 -10 0 Z" fill="url(#leafGrad)" stroke="#229954" stroke-width="2"/>
+    <path d="M -20 2 Q -32 -5 -38 -10 Q -28 -5 -20 2 Z" fill="#27AE60" stroke="#229954" stroke-width="1.5"/>
+    
+    <!-- Right leaves -->
+    <path d="M 10 0 Q 20 -10 25 -18 Q 18 -12 10 0 Z" fill="url(#leafGrad)" stroke="#229954" stroke-width="2"/>
+    <path d="M 20 2 Q 32 -5 38 -10 Q 28 -5 20 2 Z" fill="#27AE60" stroke="#229954" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Timer clock face -->
+  <circle cx="128" cy="128" r="75" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  
+  <!-- Timer segments (4 quarters like Pomodoro technique) -->
+  <g opacity="0.3">
+    <line x1="128" y1="53" x2="128" y2="63" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <line x1="203" y1="128" x2="193" y2="128" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <line x1="128" y1="203" x2="128" y2="193" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <line x1="53" y1="128" x2="63" y2="128" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Active segment (showing progress) -->
+  <path d="M 128 53 A 75 75 0 0 1 203 128 L 128 128 Z" fill="white" opacity="0.6"/>
+  
+  <!-- Clock hands -->
+  <g>
+    <!-- Hour hand -->
+    <line x1="128" y1="128" x2="128" y2="80" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    <!-- Minute hand -->
+    <line x1="128" y1="128" x2="165" y2="128" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <!-- Center dot -->
+    <circle cx="128" cy="128" r="8" fill="white"/>
+  </g>
+  
+  <!-- Subtle shine effect -->
+  <ellipse cx="110" cy="75" rx="20" ry="25" fill="white" opacity="0.2"/>
+</svg>
