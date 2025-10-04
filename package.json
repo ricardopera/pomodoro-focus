@@ -1,6 +1,6 @@
 {
   "name": "pomodoro-focus",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Aplicativo Pomodoro desktop simples, eficaz e respeitoso com a atenção do usuário",
   "main": "dist/main/index.cjs",
   "type": "module",
