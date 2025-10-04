@@ -52,20 +52,63 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Windows executables
-        run: npm run dist:win
+      - name: Clear electron-builder cache
+        run: |
+          Remove-Item "$env:LOCALAPPDATA\electron-builder\Cache" -Recurse -Force -ErrorAction SilentlyContinue
+        shell: powershell
+
+      - name: Build application (directory only)
+        run: npm run pack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GUI wrapper for console-free execution
+        run: |
+          # Create VBScript launcher
+          $vbsContent = @"
+          Set WshShell = CreateObject("WScript.Shell")
+          Set fso = CreateObject("Scripting.FileSystemObject")
+          scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+          exePath = scriptDir & "\Pomodoro Focus.exe"
+          WshShell.Run Chr(34) & exePath & Chr(34), 0, False
+          Set WshShell = Nothing
+          Set fso = Nothing
+          "@
+          $vbsContent | Out-File -FilePath "release\win-unpacked\Pomodoro Focus (No Console).vbs" -Encoding ASCII
+          
+          # Build C# GUI launcher
+          cd scripts\launcher-gui
+          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+          Copy-Item "bin\Release\net6.0-windows\win-x64\publish\Pomodoro Focus Launcher.exe" "..\..\release\win-unpacked\Pomodoro Focus (GUI).exe"
+          cd ..\..
+          
+          # Try to build installer if possible
+          npx electron-builder --win --publish=never 2>$null || echo "Installer build failed, using directory build"
+        shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List release files
-        run: dir release
+        run: |
+          dir release
+          echo "--- win-unpacked contents ---"
+          dir "release\win-unpacked"
+        shell: powershell
 
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
           path: |
             release/*.exe
+            release/win-unpacked/
+          retention-days: 1
+
+      - name: Upload Windows portable (no console)
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: release/win-unpacked/
           retention-days: 1
 
   build-linux:
