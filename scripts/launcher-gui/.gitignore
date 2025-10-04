@@ -1,0 +1,3 @@
+# .NET build outputs
+scripts/launcher-gui/bin/
+scripts/launcher-gui/obj/
