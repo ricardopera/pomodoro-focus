@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // src/main/index.ts
 var import_electron3 = require("electron");
-var import_path = __toESM(require("path"), 1);
+var import_path2 = __toESM(require("path"), 1);
 
 // src/main/ipc.ts
 var import_electron = require("electron");
@@ -466,6 +466,7 @@ function cleanupIpcHandlers() {
 
 // src/main/tray.ts
 var import_electron2 = require("electron");
+var import_path = __toESM(require("path"), 1);
 var tray = null;
 var mainWindow2 = null;
 function createTray(window) {
@@ -525,20 +526,9 @@ function destroyTray() {
   mainWindow2 = null;
 }
 function createTrayIcon() {
-  const iconSvg = `
-    <svg width="64" height="64" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="64" cy="64" r="60" fill="#E74C3C" stroke="#C0392B" stroke-width="4"/>
-      <path d="M 64 10 Q 50 15 45 25 Q 55 20 64 20 Q 73 20 83 25 Q 78 15 64 10 Z" fill="#27AE60" stroke="#229954" stroke-width="2"/>
-      <circle cx="64" cy="64" r="45" fill="none" stroke="white" stroke-width="3" opacity="0.3"/>
-      <path d="M 64 19 A 45 45 0 0 1 109 64 L 64 64 Z" fill="white" opacity="0.5"/>
-      <line x1="64" y1="64" x2="64" y2="35" stroke="white" stroke-width="4" stroke-linecap="round"/>
-      <line x1="64" y1="64" x2="85" y2="64" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="64" cy="64" r="5" fill="white"/>
-    </svg>
-  `;
-  return import_electron2.nativeImage.createFromDataURL(
-    `data:image/svg+xml;base64,${Buffer.from(iconSvg).toString("base64")}`
-  );
+  const iconPath = import_electron2.app.isPackaged ? import_path.default.join(process.resourcesPath, "icons", "app-icon.png") : import_path.default.join(__dirname, "../../public/icons/app-icon.png");
+  const icon = import_electron2.nativeImage.createFromPath(iconPath);
+  return icon.resize({ width: 16, height: 16 });
 }
 function formatState(state) {
   switch (state) {
@@ -582,7 +572,7 @@ function createWindow() {
   console.log("[MAIN] Creating window...");
   const settings = getSettings();
   console.log("[MAIN] Settings loaded:", settings);
-  const iconPath = import_electron3.app.isPackaged ? import_path.default.join(process.resourcesPath, "icons", "app-icon.png") : import_path.default.join(__dirname, "../../public/icons/app-icon.png");
+  const iconPath = import_electron3.app.isPackaged ? import_path2.default.join(process.resourcesPath, "icons", "app-icon.png") : import_path2.default.join(__dirname, "../../public/icons/app-icon.png");
   mainWindow3 = new import_electron3.BrowserWindow({
     width: 400,
     height: 600,
@@ -593,7 +583,7 @@ function createWindow() {
     resizable: true,
     icon: iconPath,
     webPreferences: {
-      preload: import_path.default.join(__dirname, "../preload/index.cjs"),
+      preload: import_path2.default.join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -607,7 +597,7 @@ function createWindow() {
     mainWindow3.loadURL(ELECTRON_RENDERER_URL);
     console.log("[MAIN] Loaded from dev server:", ELECTRON_RENDERER_URL);
   } else if (import_electron3.app.isPackaged) {
-    mainWindow3.loadFile(import_path.default.join(__dirname, "../renderer/index.html"));
+    mainWindow3.loadFile(import_path2.default.join(__dirname, "../renderer/index.html"));
     console.log("[MAIN] Loaded from file (packaged)");
   } else {
     mainWindow3.loadURL("http://localhost:5173");
