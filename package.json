@@ -67,12 +67,6 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "portable",
           "arch": [
             "x64"
@@ -82,6 +76,7 @@
       "icon": "build/icon.ico",
       "publisherName": "Ricardo Pera",
       "verifyUpdateCodeSignature": false,
+      "signAndEditExecutable": false,
       "sign": null,
       "signingHashAlgorithms": [],
       "asar": true,

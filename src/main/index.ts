@@ -60,6 +60,9 @@ function createWindow(): BrowserWindow {
   log('[MAIN] Creating window...');
   const settings = getSettings();
   log('[MAIN] Settings loaded:', settings);
+  log('[MAIN] App is packaged:', app.isPackaged);
+  log('[MAIN] process.resourcesPath:', process.resourcesPath);
+  log('[MAIN] __dirname:', __dirname);
 
   // Create app icon - try multiple possible locations
   let iconPath = '';
@@ -68,33 +71,42 @@ function createWindow(): BrowserWindow {
     // In production, try different possible locations
     const possiblePaths = [
       path.join(process.resourcesPath, 'icons', 'app-icon.png'),
+      path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icons', 'app-icon.png'),
       path.join(process.resourcesPath, 'app.asar', 'public', 'icons', 'app-icon.png'),
       path.join(__dirname, '..', '..', 'public', 'icons', 'app-icon.png'),
     ];
     
+    log('[MAIN] Trying to find icon in possible paths:');
     for (const p of possiblePaths) {
+      log('[MAIN]   Checking:', p);
       try {
         if (existsSync(p)) {
           iconPath = p;
-          log('[MAIN] Found icon at:', iconPath);
+          log('[MAIN]   ✅ FOUND!');
           break;
+        } else {
+          log('[MAIN]   ❌ Not found');
         }
       } catch (e) {
-        // Continue to next path
+        log('[MAIN]   ❌ Error checking:', e);
       }
     }
   } else {
     iconPath = path.join(__dirname, '../../public/icons/app-icon.png');
+    log('[MAIN] Development mode, using:', iconPath);
   }
   
-  log('[MAIN] Using icon path:', iconPath);
+  log('[MAIN] Final icon path:', iconPath);
+  log('[MAIN] Icon file exists:', existsSync(iconPath));
   
   // Create native image from icon path
-  const appIcon = iconPath ? nativeImage.createFromPath(iconPath) : undefined;
+  const appIcon = iconPath && existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : undefined;
   if (appIcon && !appIcon.isEmpty()) {
-    log('[MAIN] Icon loaded successfully, size:', appIcon.getSize());
+    const size = appIcon.getSize();
+    log('[MAIN] ✅ Icon loaded successfully, size:', size.width, 'x', size.height);
   } else {
-    log('[MAIN] Warning: Icon could not be loaded');
+    logError('[MAIN] ❌ WARNING: Icon could not be loaded or is empty!');
+    logError('[MAIN] iconPath was:', iconPath);
   }
 
   mainWindow = new BrowserWindow({

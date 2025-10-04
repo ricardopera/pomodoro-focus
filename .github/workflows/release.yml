@@ -52,74 +52,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Clear electron-builder cache
-        run: |
-          Remove-Item "$env:LOCALAPPDATA\electron-builder\Cache" -Recurse -Force -ErrorAction SilentlyContinue
-        shell: powershell
-
-      - name: Build application (directory only)
-        run: npm run pack
+      - name: Build Windows executables
+        run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create GUI wrapper for console-free execution
-        run: |
-          # Create VBScript launcher
-          $vbsContent = @"
-          Set WshShell = CreateObject("WScript.Shell")
-          Set fso = CreateObject("Scripting.FileSystemObject")
-          scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-          exePath = scriptDir & "\Pomodoro Focus.exe"
-          WshShell.Run Chr(34) & exePath & Chr(34), 0, False
-          Set WshShell = Nothing
-          Set fso = Nothing
-          "@
-          $vbsContent | Out-File -FilePath "release\win-unpacked\Pomodoro Focus (No Console).vbs" -Encoding ASCII
-          
-          # Build C# GUI launcher
-          try {
-            Write-Host "Building C# launcher..."
-            dotnet publish scripts\launcher-gui\launcher-gui.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o temp-launcher
-            Copy-Item "temp-launcher\Pomodoro Focus Launcher.exe" "release\win-unpacked\Pomodoro Focus (GUI).exe"
-            Remove-Item "temp-launcher" -Recurse -Force
-            Write-Host "✅ C# launcher built successfully"
-          } catch {
-            Write-Host "⚠️ C# launcher build failed: $_"
-          }
-          
-          # Try to build installer (from root directory)
-          try {
-            Write-Host "Building installer..."
-            npx electron-builder --win --publish=never
-            Write-Host "✅ Installer build completed"
-          } catch {
-            Write-Host "⚠️ Installer build failed, using directory build only"
-          }
-        shell: powershell
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: List release files
         run: |
-          dir release
-          echo "--- win-unpacked contents ---"
-          dir "release\win-unpacked"
+          Get-ChildItem release -Recurse | Select-Object FullName
         shell: powershell
 
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-artifacts
-          path: |
-            release/*.exe
-            release/win-unpacked/
-          retention-days: 1
-
-      - name: Upload Windows portable (no console)
+      - name: Upload Windows portable
         uses: actions/upload-artifact@v4
         with:
           name: windows-portable
-          path: release/win-unpacked/
+          path: release/*.exe
           retention-days: 1
 
   # build-linux:
@@ -198,7 +146,7 @@ jobs:
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: windows-artifacts
+          name: windows-portable
           path: release/
 
       # - name: Download Linux artifacts
