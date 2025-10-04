@@ -565,6 +565,11 @@ if (isDev) {
   import_electron3.app.commandLine.appendSwitch("v", "1");
 } else {
   import_electron3.app.commandLine.appendSwitch("disable-logging");
+  import_electron3.app.commandLine.appendSwitch("log-level", "3");
+  if (process.platform === "win32") {
+    import_electron3.app.commandLine.appendSwitch("disable-dev-shm-usage");
+    import_electron3.app.commandLine.appendSwitch("no-sandbox");
+  }
 }
 import_electron3.app.commandLine.appendSwitch("disable-gpu");
 import_electron3.app.commandLine.appendSwitch("disable-software-rasterizer");
@@ -585,32 +590,45 @@ function createWindow() {
   log("[MAIN] Creating window...");
   const settings = getSettings();
   log("[MAIN] Settings loaded:", settings);
+  log("[MAIN] App is packaged:", import_electron3.app.isPackaged);
+  log("[MAIN] process.resourcesPath:", process.resourcesPath);
+  log("[MAIN] __dirname:", __dirname);
   let iconPath = "";
   if (import_electron3.app.isPackaged) {
     const possiblePaths = [
       import_path2.default.join(process.resourcesPath, "icons", "app-icon.png"),
+      import_path2.default.join(process.resourcesPath, "app.asar.unpacked", "public", "icons", "app-icon.png"),
       import_path2.default.join(process.resourcesPath, "app.asar", "public", "icons", "app-icon.png"),
       import_path2.default.join(__dirname, "..", "..", "public", "icons", "app-icon.png")
     ];
+    log("[MAIN] Trying to find icon in possible paths:");
     for (const p of possiblePaths) {
+      log("[MAIN]   Checking:", p);
       try {
         if ((0, import_fs.existsSync)(p)) {
           iconPath = p;
-          log("[MAIN] Found icon at:", iconPath);
+          log("[MAIN]   \u2705 FOUND!");
           break;
+        } else {
+          log("[MAIN]   \u274C Not found");
         }
       } catch (e) {
+        log("[MAIN]   \u274C Error checking:", e);
       }
     }
   } else {
     iconPath = import_path2.default.join(__dirname, "../../public/icons/app-icon.png");
+    log("[MAIN] Development mode, using:", iconPath);
   }
-  log("[MAIN] Using icon path:", iconPath);
-  const appIcon = iconPath ? import_electron3.nativeImage.createFromPath(iconPath) : void 0;
+  log("[MAIN] Final icon path:", iconPath);
+  log("[MAIN] Icon file exists:", (0, import_fs.existsSync)(iconPath));
+  const appIcon = iconPath && (0, import_fs.existsSync)(iconPath) ? import_electron3.nativeImage.createFromPath(iconPath) : void 0;
   if (appIcon && !appIcon.isEmpty()) {
-    log("[MAIN] Icon loaded successfully, size:", appIcon.getSize());
+    const size = appIcon.getSize();
+    log("[MAIN] \u2705 Icon loaded successfully, size:", size.width, "x", size.height);
   } else {
-    log("[MAIN] Warning: Icon could not be loaded");
+    logError("[MAIN] \u274C WARNING: Icon could not be loaded or is empty!");
+    logError("[MAIN] iconPath was:", iconPath);
   }
   mainWindow3 = new import_electron3.BrowserWindow({
     width: 400,

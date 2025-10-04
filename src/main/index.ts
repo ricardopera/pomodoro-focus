@@ -30,8 +30,16 @@ if (isDev) {
   app.commandLine.appendSwitch('enable-logging');
   app.commandLine.appendSwitch('v', '1');
 } else {
-  // In production, suppress all console output
+  // In production, suppress all console output and hide console window
   app.commandLine.appendSwitch('disable-logging');
+  app.commandLine.appendSwitch('log-level', '3'); // Only fatal errors
+  
+  // Hide console window in production (Windows only)
+  if (process.platform === 'win32') {
+    // Redirect console output to prevent console window from appearing
+    app.commandLine.appendSwitch('disable-dev-shm-usage');
+    app.commandLine.appendSwitch('no-sandbox');
+  }
 }
 
 // Disable GPU to prevent renderer crashes on some Windows systems
