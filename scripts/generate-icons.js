@@ -169,5 +169,26 @@ const icoPath = path.join(buildDir, 'icon.ico');
 fs.writeFileSync(icoPath, icoIcon);
 
 console.log(`✅ Generated ${icoPath}`);
+
+// Copy PNG to build directory for macOS
+const macIconPath = path.join(buildDir, 'icon.png');
+fs.writeFileSync(macIconPath, pngIcon);
+console.log(`✅ Generated ${macIconPath}`);
+
+// Create icon directory structure for Linux
+const linuxIconSizes = [16, 32, 48, 64, 128, 256, 512];
+linuxIconSizes.forEach(size => {
+  const sizeDir = path.join(buildDir, `${size}x${size}`);
+  if (!fs.existsSync(sizeDir)) {
+    fs.mkdirSync(sizeDir, { recursive: true });
+  }
+  
+  // For now, just copy the same 512x512 icon for all sizes
+  // In production, you'd want to generate properly scaled versions
+  const iconPath = path.join(sizeDir, 'icon.png');
+  fs.writeFileSync(iconPath, pngIcon);
+  console.log(`✅ Generated ${iconPath}`);
+});
+
 console.log('🎉 Icon generation complete!');
 

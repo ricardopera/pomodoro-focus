@@ -83,7 +83,11 @@
       "publisherName": "Ricardo Pera",
       "verifyUpdateCodeSignature": false,
       "sign": null,
-      "signingHashAlgorithms": []
+      "signingHashAlgorithms": [],
+      "asar": true,
+      "asarUnpack": [
+        "**/*.node"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -135,6 +139,19 @@
       "vendor": "Ricardo Pera",
       "synopsis": "Modern Pomodoro Timer",
       "description": "A modern Pomodoro timer desktop app built with Electron, React and TypeScript"
+    },
+    "appImage": {
+      "license": "LICENSE"
+    },
+    "deb": {
+      "depends": [
+        "gconf2",
+        "gconf-service",
+        "libnotify4",
+        "libappindicator1",
+        "libxtst6",
+        "libnss3"
+      ]
     }
   },
   "dependencies": {

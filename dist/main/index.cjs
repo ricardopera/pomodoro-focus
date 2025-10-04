@@ -612,9 +612,6 @@ function createWindow() {
     console.log("[MAIN] Loaded from local dev server");
   }
   console.log("[MAIN] Window created");
-  if (import_electron3.app.isPackaged) {
-    mainWindow3.webContents.openDevTools({ mode: "detach" });
-  }
   mainWindow3.on("close", (event) => {
     console.log("[MAIN] Window close event, isQuitting:", isQuitting, "minimizeToTray:", settings.minimizeToTray);
     if (!isQuitting && settings.minimizeToTray) {
