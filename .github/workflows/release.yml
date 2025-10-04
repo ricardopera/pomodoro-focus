@@ -58,6 +58,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Post-build: Ensure GUI mode (backup fix)
+        shell: pwsh
+        run: |
+          Write-Host "Running post-build fix script..."
+          & .\scripts\post-build-fix.ps1
+
       - name: Verify executable subsystem (debug)
         shell: pwsh
         run: |
