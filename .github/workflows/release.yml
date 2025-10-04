@@ -58,6 +58,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Verify executable subsystem (debug)
+        shell: pwsh
+        run: |
+          Write-Host "Checking if executable is GUI mode..."
+          $exePath = "release\win-unpacked\Pomodoro Focus.exe"
+          if (Test-Path $exePath) {
+            Write-Host "✅ Executable found: $exePath"
+            $fileInfo = Get-Item $exePath
+            Write-Host "   Size: $($fileInfo.Length) bytes"
+            Write-Host "   Modified: $($fileInfo.LastWriteTime)"
+          } else {
+            Write-Host "❌ Executable not found at: $exePath"
+          }
+
       - name: List release files
         run: |
           Get-ChildItem release -Recurse | Select-Object FullName
