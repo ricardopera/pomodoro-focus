@@ -38,6 +38,28 @@ Um aplicativo desktop moderno de timer Pomodoro construído com Electron, React 
 
 > Em desenvolvimento - Screenshots serão adicionados em breve
 
+## 📥 Download
+
+### Versão Estável (Recomendado)
+
+Baixe a versão mais recente em: [Releases](https://github.com/ricardopera/pomodoro-focus/releases/latest)
+
+**Windows:**
+- `Pomodoro Focus Setup.exe` - Instalador completo (recomendado)
+- `PomodoroFocus-Portable.exe` - Versão portátil (não requer instalação)
+
+**Linux:**
+- `Pomodoro Focus.AppImage` - Universal (funciona em todas as distros)
+- `pomodoro-focus.deb` - Pacote Debian/Ubuntu
+
+**macOS:**
+- `Pomodoro Focus.dmg` - Instalador DMG
+- `Pomodoro Focus-mac.zip` - Arquivo ZIP
+
+### Desenvolvimento
+
+Para desenvolvedores que desejam contribuir ou executar a versão de desenvolvimento:
+
 ## 🚀 Começando
 
 ### Pré-requisitos
@@ -222,6 +244,9 @@ npm run test:coverage
 
 ## 📝 Documentação
 
+- [BUILD.md](./BUILD.md) - Guia completo de build e compilação
+- [RELEASE.md](./RELEASE.md) - Processo de releases automáticos
+- [DISTRIBUTION.md](./DISTRIBUTION.md) - Guia de distribuição
 - [CHANGELOG-FEATURES.md](./CHANGELOG-FEATURES.md) - Log de features
 - [CHANGELOG-UI.md](./CHANGELOG-UI.md) - Melhorias de UI
 - [PROGRESS.md](./PROGRESS.md) - Status do projeto
@@ -255,11 +280,12 @@ Encontrou um bug? [Abra uma issue](https://github.com/ricardopera/pomodoro-focus
 - [x] Estatísticas básicas
 - [x] System tray
 
-### v1.1 - Melhorias
-- [ ] Power management (prevenir sleep)
-- [ ] Testes automatizados
-- [ ] Build de produção
-- [ ] Instaladores (Windows/macOS/Linux)
+### v1.1 - Melhorias ✅
+- [x] Power management (prevenir sleep)
+- [x] Testes automatizados
+- [x] Build de produção
+- [x] Instaladores (Windows/macOS/Linux)
+- [x] GitHub Actions para releases automáticos
 
 ### v1.2 - Features Avançadas
 - [ ] Sincronização em nuvem

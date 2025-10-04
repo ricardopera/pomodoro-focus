@@ -1,10 +1,11 @@
 node_modules
 
 # Specification and development directories
-.github
+.github/prompts
 .specify
 specs
 
 # Build outputs
 dist
 release
+build/icon.png
