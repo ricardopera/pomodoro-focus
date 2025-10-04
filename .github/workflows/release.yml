@@ -17,16 +17,12 @@ on:
         type: string
 
 jobs:
-  create-release:
+  get-version:
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
       version_number: ${{ steps.get_version.outputs.version_number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Get version
         id: get_version
         run: |
@@ -40,67 +36,8 @@ jobs:
           VERSION_NUMBER="${VERSION#v}"
           echo "version_number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: 🍅 Pomodoro Focus ${{ steps.get_version.outputs.version }}
-          body: |
-            ## 🍅 Pomodoro Focus ${{ steps.get_version.outputs.version }}
-            
-            ### 🎉 Release Highlights
-            
-            Um timer Pomodoro moderno e eficiente para Windows, Linux e macOS, construído com Electron, React e TypeScript.
-            
-            #### ✨ Features
-            
-            - ⏱️ Timer Pomodoro completo com sessões de foco e pausas
-            - 🎨 Temas modernos (Light/Dark/System)
-            - 🪟 Interface limpa com janela frameless
-            - 📊 Estatísticas de produtividade
-            - 🔔 Notificações nativas
-            - 🔊 Sistema de sons
-            - 📍 System tray com minimize to tray
-            - 💾 Persistência de configurações e estado
-            
-            #### 📥 Downloads
-            
-            **Windows:**
-            - `Pomodoro Focus Setup ${{ steps.get_version.outputs.version_number }}.exe` - Instalador NSIS (recomendado)
-            - `PomodoroFocus-Portable-${{ steps.get_version.outputs.version_number }}.exe` - Versão portátil
-            
-            **Linux:**
-            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}.AppImage` - Universal (recomendado)
-            - `pomodoro-focus_${{ steps.get_version.outputs.version_number }}_amd64.deb` - Debian/Ubuntu
-            
-            **macOS:**
-            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}.dmg` - Instalador DMG
-            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}-mac.zip` - Arquivo ZIP
-            
-            #### 🚀 Como Usar
-            
-            1. Baixe o executável apropriado para seu sistema operacional
-            2. Instale ou execute o aplicativo
-            3. Configure suas preferências na aba "Configurações"
-            4. Comece a usar a técnica Pomodoro!
-            
-            #### 📝 Notas
-            
-            - **Windows**: Na primeira execução, o Windows Defender pode mostrar um aviso. Clique em "Mais informações" → "Executar mesmo assim"
-            - **macOS**: Pode ser necessário ir em "Preferências do Sistema" → "Segurança e Privacidade" para permitir a execução
-            - **Linux**: Para AppImage, torne executável com `chmod +x` antes de executar
-            
-            ---
-            
-            **Desenvolvido com ❤️ usando a Técnica Pomodoro**
-          draft: false
-          prerelease: false
-
   build-windows:
-    needs: create-release
+    needs: get-version
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -123,28 +60,16 @@ jobs:
       - name: List release files
         run: dir release
 
-      - name: Upload NSIS Installer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/Pomodoro Focus Setup ${{ needs.create-release.outputs.version_number }}.exe
-          asset_name: Pomodoro Focus Setup ${{ needs.create-release.outputs.version_number }}.exe
-          asset_content_type: application/x-msdownload
-
-      - name: Upload Portable Executable
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/PomodoroFocus-Portable-${{ needs.create-release.outputs.version_number }}.exe
-          asset_name: PomodoroFocus-Portable-${{ needs.create-release.outputs.version_number }}.exe
-          asset_content_type: application/x-msdownload
+          name: windows-artifacts
+          path: |
+            release/*.exe
+          retention-days: 1
 
   build-linux:
-    needs: create-release
+    needs: get-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -167,28 +92,17 @@ jobs:
       - name: List release files
         run: ls -lh release/
 
-      - name: Upload AppImage
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.AppImage
-          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.AppImage
-          asset_content_type: application/x-executable
-
-      - name: Upload DEB package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/pomodoro-focus_${{ needs.create-release.outputs.version_number }}_amd64.deb
-          asset_name: pomodoro-focus_${{ needs.create-release.outputs.version_number }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
+          name: linux-artifacts
+          path: |
+            release/*.AppImage
+            release/*.deb
+          retention-days: 1
 
   build-macos:
-    needs: create-release
+    needs: get-version
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -211,22 +125,98 @@ jobs:
       - name: List release files
         run: ls -lh release/
 
-      - name: Upload DMG
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.dmg
-          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.dmg
-          asset_content_type: application/x-apple-diskimage
+          name: macos-artifacts
+          path: |
+            release/*.dmg
+            release/*-mac.zip
+          retention-days: 1
 
-      - name: Upload ZIP
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  create-release:
+    needs: [get-version, build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v3
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}-mac.zip
-          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}-mac.zip
-          asset_content_type: application/zip
+          name: windows-artifacts
+          path: release/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: linux-artifacts
+          path: release/
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-artifacts
+          path: release/
+
+      - name: List all artifacts
+        run: ls -lh release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get-version.outputs.version }}
+          name: 🍅 Pomodoro Focus ${{ needs.get-version.outputs.version }}
+          body: |
+            ## 🍅 Pomodoro Focus ${{ needs.get-version.outputs.version }}
+            
+            ### 🎉 Release Highlights
+            
+            Um timer Pomodoro moderno e eficiente para Windows, Linux e macOS, construído com Electron, React e TypeScript.
+            
+            #### ✨ Features
+            
+            - ⏱️ Timer Pomodoro completo com sessões de foco e pausas
+            - 🎨 Temas modernos (Light/Dark/System)
+            - 🪟 Interface limpa com janela frameless
+            - 📊 Estatísticas de produtividade
+            - 🔔 Notificações nativas
+            - 🔊 Sistema de sons
+            - 📍 System tray com minimize to tray
+            - 💾 Persistência de configurações e estado
+            
+            #### 📥 Downloads
+            
+            **Windows:**
+            - `Pomodoro Focus Setup ${{ needs.get-version.outputs.version_number }}.exe` - Instalador NSIS (recomendado)
+            - `PomodoroFocus-Portable-${{ needs.get-version.outputs.version_number }}.exe` - Versão portátil
+            
+            **Linux:**
+            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}.AppImage` - Universal (recomendado)
+            - `pomodoro-focus_${{ needs.get-version.outputs.version_number }}_amd64.deb` - Debian/Ubuntu
+            
+            **macOS:**
+            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}.dmg` - Instalador DMG
+            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}-mac.zip` - Arquivo ZIP
+            
+            #### 🚀 Como Usar
+            
+            1. Baixe o executável apropriado para seu sistema operacional
+            2. Instale ou execute o aplicativo
+            3. Configure suas preferências na aba "Configurações"
+            4. Comece a usar a técnica Pomodoro!
+            
+            #### 📝 Notas
+            
+            - **Windows**: Na primeira execução, o Windows Defender pode mostrar um aviso. Clique em "Mais informações" → "Executar mesmo assim"
+            - **macOS**: Pode ser necessário ir em "Preferências do Sistema" → "Segurança e Privacidade" para permitir a execução
+            - **Linux**: Para AppImage, torne executável com `chmod +x` antes de executar
+            
+            ---
+            
+            **Desenvolvido com ❤️ usando a Técnica Pomodoro**
+          draft: false
+          prerelease: false
+          files: |
+            release/*
+          token: ${{ secrets.GITHUB_TOKEN }}
