@@ -78,7 +78,7 @@
           ]
         }
       ],
-      "icon": "build/icon.png",
+      "icon": "build/icon.ico",
       "publisherName": "Ricardo Pera",
       "verifyUpdateCodeSignature": false,
       "sign": null,
@@ -91,8 +91,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Pomodoro Focus",
-      "installerIcon": "build/icon.png",
-      "uninstallerIcon": "build/icon.png"
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     },
     "portable": {
       "artifactName": "PomodoroFocus-Portable-${version}.exe"

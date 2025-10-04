@@ -1,6 +1,6 @@
 /**
- * Generate PNG icons from SVG for the app icon
- * Creates a simple PNG icon programmatically
+ * Generate PNG and ICO icons from SVG for the app icon
+ * Creates a simple PNG icon programmatically and converts to ICO
  */
 
 import fs from 'fs';
@@ -112,9 +112,32 @@ function createPngIcon() {
   ]);
 }
 
+// Create ICO file from PNG data
+function createIcoIcon(pngData) {
+  // ICO file header
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);  // Reserved (must be 0)
+  header.writeUInt16LE(1, 2);  // Type (1 = ICO)
+  header.writeUInt16LE(1, 4);  // Number of images
+  
+  // ICO directory entry
+  const dirEntry = Buffer.alloc(16);
+  dirEntry.writeUInt8(0, 0);      // Width (0 = 256)
+  dirEntry.writeUInt8(0, 1);      // Height (0 = 256)
+  dirEntry.writeUInt8(0, 2);      // Color palette (0 = no palette)
+  dirEntry.writeUInt8(0, 3);      // Reserved (must be 0)
+  dirEntry.writeUInt16LE(1, 4);   // Color planes
+  dirEntry.writeUInt16LE(32, 6);  // Bits per pixel
+  dirEntry.writeUInt32LE(pngData.length, 8);  // Size of image data
+  dirEntry.writeUInt32LE(22, 12); // Offset of image data (6 + 16)
+  
+  return Buffer.concat([header, dirEntry, pngData]);
+}
+
 // Generate icons
 const iconsDir = path.join(__dirname, '..', 'public', 'icons');
 const buildIconsDir = path.join(__dirname, '..', 'dist-electron', 'icons');
+const buildDir = path.join(__dirname, '..', 'build');
 
 if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
@@ -122,6 +145,10 @@ if (!fs.existsSync(iconsDir)) {
 
 if (!fs.existsSync(buildIconsDir)) {
   fs.mkdirSync(buildIconsDir, { recursive: true });
+}
+
+if (!fs.existsSync(buildDir)) {
+  fs.mkdirSync(buildDir, { recursive: true });
 }
 
 console.log('🎨 Generating app icons...');
@@ -135,5 +162,12 @@ fs.writeFileSync(buildPngPath, pngIcon);
 
 console.log(`✅ Generated ${pngPath}`);
 console.log(`✅ Generated ${buildPngPath}`);
+
+// Generate ICO for Windows
+const icoIcon = createIcoIcon(pngIcon);
+const icoPath = path.join(buildDir, 'icon.ico');
+fs.writeFileSync(icoPath, icoIcon);
+
+console.log(`✅ Generated ${icoPath}`);
 console.log('🎉 Icon generation complete!');
 
