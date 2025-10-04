@@ -12,12 +12,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Create a simple 512x512 PNG icon (red tomato on white background)
-function createPngIcon() {
+function createPngIcon(size = 256) {
   // PNG file signature
   const pngSignature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
   
-  const width = 512;
-  const height = 512;
+  const width = size;
+  const height = size;
   
   // Create IHDR chunk (image header)
   function createIHDR() {
@@ -113,25 +113,28 @@ function createPngIcon() {
 }
 
 // Create ICO file from PNG data
-function createIcoIcon(pngData) {
+function createIcoIcon() {
+  // Create a 256x256 PNG for the ICO (NSIS standard size)
+  const png256 = createPngIcon(256);
+  
   // ICO file header
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0);  // Reserved (must be 0)
   header.writeUInt16LE(1, 2);  // Type (1 = ICO)
-  header.writeUInt16LE(1, 4);  // Number of images
+  header.writeUInt16LE(1, 4);  // Number of images (just one 256x256)
   
-  // ICO directory entry
+  // ICO directory entry for 256x256
   const dirEntry = Buffer.alloc(16);
   dirEntry.writeUInt8(0, 0);      // Width (0 = 256)
   dirEntry.writeUInt8(0, 1);      // Height (0 = 256)
   dirEntry.writeUInt8(0, 2);      // Color palette (0 = no palette)
   dirEntry.writeUInt8(0, 3);      // Reserved (must be 0)
   dirEntry.writeUInt16LE(1, 4);   // Color planes
-  dirEntry.writeUInt16LE(32, 6);  // Bits per pixel
-  dirEntry.writeUInt32LE(pngData.length, 8);  // Size of image data
-  dirEntry.writeUInt32LE(22, 12); // Offset of image data (6 + 16)
+  dirEntry.writeUInt16LE(32, 6);  // Bits per pixel (32-bit RGBA)
+  dirEntry.writeUInt32LE(png256.length, 8);  // Size of image data
+  dirEntry.writeUInt32LE(22, 12); // Offset of image data (6 header + 16 dir entry)
   
-  return Buffer.concat([header, dirEntry, pngData]);
+  return Buffer.concat([header, dirEntry, png256]);
 }
 
 // Generate icons
@@ -161,8 +164,8 @@ if (fs.existsSync(customIconPath)) {
   console.log('📸 Using existing app-icon.png');
   pngIcon = fs.readFileSync(customIconPath);
 } else {
-  console.log('🎨 Generating programmatic icon');
-  pngIcon = createPngIcon();
+  console.log('🎨 Generating programmatic icon (512x512)');
+  pngIcon = createPngIcon(512);
 }
 
 const buildPngPath = path.join(buildIconsDir, 'app-icon.png');
@@ -178,10 +181,13 @@ fs.writeFileSync(buildPngPath, pngIcon);
 console.log(`✅ Generated ${buildPngPath}`);
 
 // Generate ICO for Windows
-const icoIcon = createIcoIcon(pngIcon);
+// Instead of creating ICO programmatically (which can cause issues),
+// we'll copy the PNG and let electron-builder convert it
 const icoPath = path.join(buildDir, 'icon.ico');
-fs.writeFileSync(icoPath, icoIcon);
 
+// Create a proper 256x256 ICO file
+const icoIcon = createIcoIcon();
+fs.writeFileSync(icoPath, icoIcon);
 console.log(`✅ Generated ${icoPath}`);
 
 // Copy PNG to build directory for macOS
