@@ -11,7 +11,9 @@ const { execSync } = require('child_process');
 
 const rootDir = path.join(__dirname, '..');
 const tempDir = path.join(rootDir, 'temp-app');
-const asarPath = path.join(rootDir, 'release', 'win-unpacked', 'resources', 'app.asar');
+const releaseDir = path.join(rootDir, 'release', 'win-unpacked');
+const asarPath = path.join(releaseDir, 'resources', 'app.asar');
+const electronSrcDir = path.join(rootDir, 'node_modules', 'electron', 'dist');
 
 console.log('📦 Packing application manually...');
 
@@ -85,16 +87,15 @@ if (fs.existsSync(srcNodeModules)) {
   process.exit(1);
 }
 
-// Remove old asar if exists
+// Remove old asar if exists - skip if busy
 if (fs.existsSync(asarPath)) {
   console.log('🗑️  Removing old app.asar...');
   try {
     fs.unlinkSync(asarPath);
+    console.log('✅ Removed successfully');
   } catch (err) {
     if (err.code === 'EBUSY') {
-      console.log('⚠️  File is busy, renaming instead...');
-      const backupPath = asarPath + '.backup' + Date.now();
-      fs.renameSync(asarPath, backupPath);
+      console.log('⚠️  File is busy, will be overwritten by asar pack');
     } else {
       throw err;
     }
@@ -106,6 +107,71 @@ console.log('📦 Packing into app.asar...');
 try {
   execSync(`npx asar pack "${tempDir}" "${asarPath}"`, { stdio: 'inherit' });
   console.log('✅ Successfully packed app.asar');
+  
+  // Copy Electron distribution if not exists
+  const electronExe = path.join(releaseDir, 'Pomodoro Focus.exe');
+  if (!fs.existsSync(electronExe)) {
+    console.log('📦 Copying Electron distribution...');
+    
+    // Create release directory if not exists
+    if (!fs.existsSync(releaseDir)) {
+      fs.mkdirSync(releaseDir, { recursive: true });
+    }
+    
+    // Copy all electron files
+    const electronFiles = fs.readdirSync(electronSrcDir);
+    electronFiles.forEach(file => {
+      const srcFile = path.join(electronSrcDir, file);
+      const destFile = path.join(releaseDir, file);
+      
+      // Skip resources folder (we're creating our own)
+      if (file === 'resources') return;
+      
+      if (fs.statSync(srcFile).isDirectory()) {
+        fs.cpSync(srcFile, destFile, { recursive: true });
+      } else {
+        fs.copyFileSync(srcFile, destFile);
+      }
+    });
+    
+    // Rename electron.exe to Pomodoro Focus.exe
+    const electronSrc = path.join(releaseDir, 'electron.exe');
+    if (fs.existsSync(electronSrc)) {
+      fs.renameSync(electronSrc, electronExe);
+      console.log('✅ Renamed electron.exe to Pomodoro Focus.exe');
+    }
+  }
+  
+  // Copy icons to resources folder (for tray icon)
+  const iconsResourceDir = path.join(releaseDir, 'resources', 'icons');
+  const publicIconsDir = path.join(rootDir, 'public', 'icons');
+  if (fs.existsSync(publicIconsDir)) {
+    console.log('📦 Copying icons to resources...');
+    fs.mkdirSync(iconsResourceDir, { recursive: true });
+    fs.cpSync(publicIconsDir, iconsResourceDir, { recursive: true });
+    console.log('✅ Icons copied to resources');
+  }
+  
+  // Copy sounds to resources folder
+  const soundsResourceDir = path.join(releaseDir, 'resources', 'sounds');
+  const publicSoundsDir = path.join(rootDir, 'public', 'sounds');
+  if (fs.existsSync(publicSoundsDir)) {
+    console.log('📦 Copying sounds to resources...');
+    fs.mkdirSync(soundsResourceDir, { recursive: true });
+    fs.cpSync(publicSoundsDir, soundsResourceDir, { recursive: true });
+    console.log('✅ Sounds copied to resources');
+  }
+  
+  // Copy launcher.vbs to release folder for no-console execution
+  const launcherSrc = path.join(rootDir, 'scripts', 'launcher.vbs');
+  const launcherDest = path.join(releaseDir, 'Pomodoro Focus (No Console).vbs');
+  if (fs.existsSync(launcherSrc)) {
+    fs.copyFileSync(launcherSrc, launcherDest);
+    console.log('✅ Created no-console launcher');
+    console.log('');
+    console.log('⚠️  IMPORTANT: Use "Pomodoro Focus (No Console).vbs" to run without console!');
+    console.log('   Do NOT use "Pomodoro Focus.exe" directly (it will show console)');
+  }
 } catch (error) {
   console.error('❌ Failed to pack app.asar:', error.message);
   process.exit(1);

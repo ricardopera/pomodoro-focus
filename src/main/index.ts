@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import path from 'path';
+import { existsSync } from 'fs';
 import { setupIpcHandlers, cleanupIpcHandlers } from './ipc';
 import { createTray, destroyTray } from './tray';
 import { getSettings } from './store';
@@ -60,10 +61,41 @@ function createWindow(): BrowserWindow {
   const settings = getSettings();
   log('[MAIN] Settings loaded:', settings);
 
-  // Create app icon
-  const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icons', 'app-icon.png')
-    : path.join(__dirname, '../../public/icons/app-icon.png');
+  // Create app icon - try multiple possible locations
+  let iconPath = '';
+  
+  if (app.isPackaged) {
+    // In production, try different possible locations
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'icons', 'app-icon.png'),
+      path.join(process.resourcesPath, 'app.asar', 'public', 'icons', 'app-icon.png'),
+      path.join(__dirname, '..', '..', 'public', 'icons', 'app-icon.png'),
+    ];
+    
+    for (const p of possiblePaths) {
+      try {
+        if (existsSync(p)) {
+          iconPath = p;
+          log('[MAIN] Found icon at:', iconPath);
+          break;
+        }
+      } catch (e) {
+        // Continue to next path
+      }
+    }
+  } else {
+    iconPath = path.join(__dirname, '../../public/icons/app-icon.png');
+  }
+  
+  log('[MAIN] Using icon path:', iconPath);
+  
+  // Create native image from icon path
+  const appIcon = iconPath ? nativeImage.createFromPath(iconPath) : undefined;
+  if (appIcon && !appIcon.isEmpty()) {
+    log('[MAIN] Icon loaded successfully, size:', appIcon.getSize());
+  } else {
+    log('[MAIN] Warning: Icon could not be loaded');
+  }
 
   mainWindow = new BrowserWindow({
     width: 400,
@@ -74,7 +106,7 @@ function createWindow(): BrowserWindow {
     resizable: true,
     show: false, // Don't show until ready
     backgroundColor: '#1e293b', // Set background color
-    icon: iconPath,
+    icon: appIcon, // Use nativeImage instead of path
     webPreferences: {
       preload: app.isPackaged 
         ? path.join(__dirname, '..', 'preload', 'index.cjs')
@@ -108,6 +140,17 @@ function createWindow(): BrowserWindow {
   }
 
   log('[MAIN] Window created');
+  
+  // Force set icon after creation (Windows sometimes needs this)
+  // Explicitly set icon after window creation (redundant but ensures it's set)
+  if (appIcon && !appIcon.isEmpty()) {
+    try {
+      mainWindow.setIcon(appIcon);
+      log('[MAIN] Icon explicitly set with nativeImage');
+    } catch (e) {
+      logError('[MAIN] Failed to set icon:', e);
+    }
+  }
 
   // Open DevTools for debugging (comment out for production)
   // if (app.isPackaged) {

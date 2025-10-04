@@ -25,6 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // src/main/index.ts
 var import_electron3 = require("electron");
 var import_path2 = __toESM(require("path"), 1);
+var import_fs = require("fs");
 
 // src/main/ipc.ts
 var import_electron = require("electron");
@@ -584,7 +585,33 @@ function createWindow() {
   log("[MAIN] Creating window...");
   const settings = getSettings();
   log("[MAIN] Settings loaded:", settings);
-  const iconPath = import_electron3.app.isPackaged ? import_path2.default.join(process.resourcesPath, "icons", "app-icon.png") : import_path2.default.join(__dirname, "../../public/icons/app-icon.png");
+  let iconPath = "";
+  if (import_electron3.app.isPackaged) {
+    const possiblePaths = [
+      import_path2.default.join(process.resourcesPath, "icons", "app-icon.png"),
+      import_path2.default.join(process.resourcesPath, "app.asar", "public", "icons", "app-icon.png"),
+      import_path2.default.join(__dirname, "..", "..", "public", "icons", "app-icon.png")
+    ];
+    for (const p of possiblePaths) {
+      try {
+        if ((0, import_fs.existsSync)(p)) {
+          iconPath = p;
+          log("[MAIN] Found icon at:", iconPath);
+          break;
+        }
+      } catch (e) {
+      }
+    }
+  } else {
+    iconPath = import_path2.default.join(__dirname, "../../public/icons/app-icon.png");
+  }
+  log("[MAIN] Using icon path:", iconPath);
+  const appIcon = iconPath ? import_electron3.nativeImage.createFromPath(iconPath) : void 0;
+  if (appIcon && !appIcon.isEmpty()) {
+    log("[MAIN] Icon loaded successfully, size:", appIcon.getSize());
+  } else {
+    log("[MAIN] Warning: Icon could not be loaded");
+  }
   mainWindow3 = new import_electron3.BrowserWindow({
     width: 400,
     height: 600,
@@ -597,7 +624,8 @@ function createWindow() {
     // Don't show until ready
     backgroundColor: "#1e293b",
     // Set background color
-    icon: iconPath,
+    icon: appIcon,
+    // Use nativeImage instead of path
     webPreferences: {
       preload: import_electron3.app.isPackaged ? import_path2.default.join(__dirname, "..", "preload", "index.cjs") : import_path2.default.join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
@@ -624,6 +652,14 @@ function createWindow() {
     log("[MAIN] Loaded from local dev server");
   }
   log("[MAIN] Window created");
+  if (appIcon && !appIcon.isEmpty()) {
+    try {
+      mainWindow3.setIcon(appIcon);
+      log("[MAIN] Icon explicitly set with nativeImage");
+    } catch (e) {
+      logError("[MAIN] Failed to set icon:", e);
+    }
+  }
   mainWindow3.on("close", (event) => {
     log("[MAIN] Window close event, isQuitting:", isQuitting, "minimizeToTray:", settings.minimizeToTray);
     if (!isQuitting && settings.minimizeToTray) {
