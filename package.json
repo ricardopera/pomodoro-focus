@@ -18,7 +18,7 @@
     "build": "node scripts/build-electron.js && vite build",
     "build:electron": "node scripts/build-electron.js",
     "build:renderer": "vite build",
-    "build:prod": "node scripts/generate-sounds.js && node scripts/generate-icons.js && node scripts/build-electron.js && vite build",
+    "build:prod": "node scripts/prepare-build.js && node scripts/generate-sounds.js && node scripts/generate-icons.js && node scripts/build-electron.js && vite build",
     "preview": "electron-vite preview",
     "pack": "npm run build:prod && electron-builder --dir",
     "dist": "npm run build:prod && electron-builder",
@@ -70,7 +70,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "public/icons/app-icon.png",
+      "icon": "build/icon.png",
       "publisherName": "Ricardo Pera",
       "verifyUpdateCodeSignature": false,
       "sign": null,
@@ -83,15 +83,15 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Pomodoro Focus",
-      "installerIcon": "public/icons/app-icon.png",
-      "uninstallerIcon": "public/icons/app-icon.png"
+      "installerIcon": "build/icon.png",
+      "uninstallerIcon": "build/icon.png"
     },
     "portable": {
       "artifactName": "PomodoroFocus-Portable-${version}.exe"
     },
     "mac": {
       "target": ["dmg", "zip"],
-      "icon": "public/icons/app-icon.png",
+      "icon": "build/icon.png",
       "category": "public.app-category.productivity",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
@@ -110,11 +110,11 @@
         }
       ],
       "title": "Pomodoro Focus ${version}",
-      "icon": "public/icons/app-icon.png"
+      "icon": "build/icon.png"
     },
     "linux": {
       "target": ["AppImage", "deb"],
-      "icon": "public/icons",
+      "icon": "build",
       "category": "Utility",
       "maintainer": "Ricardo Pera <ricardo@example.com>",
       "vendor": "Ricardo Pera",

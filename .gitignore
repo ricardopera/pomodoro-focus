@@ -8,3 +8,4 @@ specs
 # Build outputs
 dist
 release
+build/icon.png
