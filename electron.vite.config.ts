@@ -42,6 +42,7 @@ export default defineConfig({
   },
   renderer: {
     plugins: [react()],
+    base: './', // Use relative paths for file:// protocol
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
@@ -56,6 +57,8 @@ export default defineConfig({
       rollupOptions: {
         input: resolve(__dirname, 'index.html'),
       },
+      // Use relative paths for assets so they work with file:// protocol
+      assetsDir: 'assets',
     },
     server: {
       port: 5173,

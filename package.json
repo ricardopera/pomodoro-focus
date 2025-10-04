@@ -21,6 +21,7 @@
     "build:prod": "node scripts/prepare-build.js && node scripts/generate-sounds.js && node scripts/generate-icons.js && node scripts/build-electron.js && vite build",
     "preview": "electron-vite preview",
     "pack": "npm run build:prod && electron-builder --dir",
+    "pack:manual": "npm run build && node scripts/pack-app.cjs",
     "dist": "npm run build:prod && electron-builder",
     "dist:win": "npm run build:prod && electron-builder --win",
     "dist:mac": "npm run build:prod && electron-builder --mac",

@@ -54,9 +54,13 @@ function createWindow(): BrowserWindow {
     minHeight: 500,
     frame: false, // Remove frame to hide menu bar
     resizable: true,
+    show: false, // Don't show until ready
+    backgroundColor: '#1e293b', // Set background color
     icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.cjs'),
+      preload: app.isPackaged 
+        ? path.join(__dirname, '..', 'preload', 'index.cjs')
+        : path.join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true, // Enable sandbox for security
@@ -67,12 +71,17 @@ function createWindow(): BrowserWindow {
   const ELECTRON_RENDERER_URL = process.env.ELECTRON_RENDERER_URL;
   console.log('[MAIN] ELECTRON_RENDERER_URL:', ELECTRON_RENDERER_URL);
   console.log('[MAIN] Loading URL...');
+  console.log('[MAIN] __dirname:', __dirname);
+  console.log('[MAIN] app.isPackaged:', app.isPackaged);
 
   if (ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(ELECTRON_RENDERER_URL);
     console.log('[MAIN] Loaded from dev server:', ELECTRON_RENDERER_URL);
   } else if (app.isPackaged) {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    // In packaged app, renderer files are in dist/renderer
+    const indexPath = path.join(__dirname, '..', 'renderer', 'index.html');
+    console.log('[MAIN] Loading from:', indexPath);
+    mainWindow.loadFile(indexPath);
     console.log('[MAIN] Loaded from file (packaged)');
   } else {
     // Development: load from default Vite port
@@ -81,6 +90,11 @@ function createWindow(): BrowserWindow {
   }
 
   console.log('[MAIN] Window created');
+
+  // Open DevTools for debugging (comment out for production)
+  // if (app.isPackaged) {
+  //   mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // }
 
   // Window event listeners
   mainWindow.on('close', (event) => {
@@ -116,6 +130,9 @@ function createWindow(): BrowserWindow {
 
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('[MAIN] Page finished loading');
+    mainWindow?.show();
+    mainWindow?.focus();
+    console.log('[MAIN] Window shown and focused');
   });
 
   mainWindow.webContents.on('dom-ready', () => {

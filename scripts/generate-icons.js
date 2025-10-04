@@ -11,13 +11,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create a simple 256x256 PNG icon
+// Create a simple 512x512 PNG icon (red tomato on white background)
 function createPngIcon() {
   // PNG file signature
   const pngSignature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
   
-  const width = 256;
-  const height = 256;
+  const width = 512;
+  const height = 512;
   
   // Create IHDR chunk (image header)
   function createIHDR() {
