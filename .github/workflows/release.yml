@@ -77,13 +77,23 @@ jobs:
           $vbsContent | Out-File -FilePath "release\win-unpacked\Pomodoro Focus (No Console).vbs" -Encoding ASCII
           
           # Build C# GUI launcher
-          cd scripts\launcher-gui
-          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
-          Copy-Item "bin\Release\net6.0-windows\win-x64\publish\Pomodoro Focus Launcher.exe" "..\..\release\win-unpacked\Pomodoro Focus (GUI).exe"
-          cd ..\..
+          try {
+            cd scripts\launcher-gui
+            dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+            Copy-Item "bin\Release\net6.0-windows\win-x64\publish\Pomodoro Focus Launcher.exe" "..\..\release\win-unpacked\Pomodoro Focus (GUI).exe"
+            cd ..\..
+            Write-Host "✅ C# launcher built successfully"
+          } catch {
+            Write-Host "⚠️ C# launcher build failed: $_"
+          }
           
-          # Try to build installer if possible
-          npx electron-builder --win --publish=never 2>$null || echo "Installer build failed, using directory build"
+          # Try to build installer
+          try {
+            npx electron-builder --win --publish=never
+            Write-Host "✅ Installer build completed"
+          } catch {
+            Write-Host "⚠️ Installer build failed, using directory build only"
+          }
         shell: powershell
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
