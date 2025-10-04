@@ -244,11 +244,12 @@ npm run test:coverage
 
 ## 📝 Documentação
 
+- [BUILD.md](./BUILD.md) - Guia completo de build e compilação
+- [RELEASE.md](./RELEASE.md) - Processo de releases automáticos
+- [DISTRIBUTION.md](./DISTRIBUTION.md) - Guia de distribuição
 - [CHANGELOG-FEATURES.md](./CHANGELOG-FEATURES.md) - Log de features
 - [CHANGELOG-UI.md](./CHANGELOG-UI.md) - Melhorias de UI
 - [PROGRESS.md](./PROGRESS.md) - Status do projeto
-- [DISTRIBUTION.md](./DISTRIBUTION.md) - Guia de distribuição
-- [RELEASE.md](./RELEASE.md) - Processo de releases
 - [docs/SOUNDS.md](./docs/SOUNDS.md) - Sistema de sons
 
 ## 🤝 Contribuindo
