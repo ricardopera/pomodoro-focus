@@ -78,17 +78,18 @@ jobs:
           
           # Build C# GUI launcher
           try {
-            cd scripts\launcher-gui
-            dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
-            Copy-Item "bin\Release\net6.0-windows\win-x64\publish\Pomodoro Focus Launcher.exe" "..\..\release\win-unpacked\Pomodoro Focus (GUI).exe"
-            cd ..\..
+            Write-Host "Building C# launcher..."
+            dotnet publish scripts\launcher-gui\launcher-gui.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o temp-launcher
+            Copy-Item "temp-launcher\Pomodoro Focus Launcher.exe" "release\win-unpacked\Pomodoro Focus (GUI).exe"
+            Remove-Item "temp-launcher" -Recurse -Force
             Write-Host "✅ C# launcher built successfully"
           } catch {
             Write-Host "⚠️ C# launcher build failed: $_"
           }
           
-          # Try to build installer
+          # Try to build installer (from root directory)
           try {
+            Write-Host "Building installer..."
             npx electron-builder --win --publish=never
             Write-Host "✅ Installer build completed"
           } catch {
