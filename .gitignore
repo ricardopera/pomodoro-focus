@@ -1,7 +1,7 @@
 node_modules
 
 # Specification and development directories
-.github
+.github/prompts
 .specify
 specs
 

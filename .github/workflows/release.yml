@@ -1,0 +1,227 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+      version_number: ${{ steps.get_version.outputs.version_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Remove 'v' prefix for version number (v1.0.0 -> 1.0.0)
+          VERSION_NUMBER="${VERSION#v}"
+          echo "version_number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: 🍅 Pomodoro Focus ${{ steps.get_version.outputs.version }}
+          body: |
+            ## 🍅 Pomodoro Focus ${{ steps.get_version.outputs.version }}
+            
+            ### 🎉 Release Highlights
+            
+            Um timer Pomodoro moderno e eficiente para Windows, Linux e macOS, construído com Electron, React e TypeScript.
+            
+            #### ✨ Features
+            
+            - ⏱️ Timer Pomodoro completo com sessões de foco e pausas
+            - 🎨 Temas modernos (Light/Dark/System)
+            - 🪟 Interface limpa com janela frameless
+            - 📊 Estatísticas de produtividade
+            - 🔔 Notificações nativas
+            - 🔊 Sistema de sons
+            - 📍 System tray com minimize to tray
+            - 💾 Persistência de configurações e estado
+            
+            #### 📥 Downloads
+            
+            **Windows:**
+            - `Pomodoro Focus Setup ${{ steps.get_version.outputs.version_number }}.exe` - Instalador NSIS (recomendado)
+            - `PomodoroFocus-Portable-${{ steps.get_version.outputs.version_number }}.exe` - Versão portátil
+            
+            **Linux:**
+            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}.AppImage` - Universal (recomendado)
+            - `pomodoro-focus_${{ steps.get_version.outputs.version_number }}_amd64.deb` - Debian/Ubuntu
+            
+            **macOS:**
+            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}.dmg` - Instalador DMG
+            - `Pomodoro Focus-${{ steps.get_version.outputs.version_number }}-mac.zip` - Arquivo ZIP
+            
+            #### 🚀 Como Usar
+            
+            1. Baixe o executável apropriado para seu sistema operacional
+            2. Instale ou execute o aplicativo
+            3. Configure suas preferências na aba "Configurações"
+            4. Comece a usar a técnica Pomodoro!
+            
+            #### 📝 Notas
+            
+            - **Windows**: Na primeira execução, o Windows Defender pode mostrar um aviso. Clique em "Mais informações" → "Executar mesmo assim"
+            - **macOS**: Pode ser necessário ir em "Preferências do Sistema" → "Segurança e Privacidade" para permitir a execução
+            - **Linux**: Para AppImage, torne executável com `chmod +x` antes de executar
+            
+            ---
+            
+            **Desenvolvido com ❤️ usando a Técnica Pomodoro**
+          draft: false
+          prerelease: false
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows executables
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List release files
+        run: dir release
+
+      - name: Upload NSIS Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/Pomodoro Focus Setup ${{ needs.create-release.outputs.version_number }}.exe
+          asset_name: Pomodoro Focus Setup ${{ needs.create-release.outputs.version_number }}.exe
+          asset_content_type: application/x-msdownload
+
+      - name: Upload Portable Executable
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/PomodoroFocus-Portable-${{ needs.create-release.outputs.version_number }}.exe
+          asset_name: PomodoroFocus-Portable-${{ needs.create-release.outputs.version_number }}.exe
+          asset_content_type: application/x-msdownload
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Linux executables
+        run: npm run dist:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List release files
+        run: ls -lh release/
+
+      - name: Upload AppImage
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.AppImage
+          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.AppImage
+          asset_content_type: application/x-executable
+
+      - name: Upload DEB package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/pomodoro-focus_${{ needs.create-release.outputs.version_number }}_amd64.deb
+          asset_name: pomodoro-focus_${{ needs.create-release.outputs.version_number }}_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+  build-macos:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS executables
+        run: npm run dist:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List release files
+        run: ls -lh release/
+
+      - name: Upload DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.dmg
+          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload ZIP
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/Pomodoro Focus-${{ needs.create-release.outputs.version_number }}-mac.zip
+          asset_name: Pomodoro Focus-${{ needs.create-release.outputs.version_number }}-mac.zip
+          asset_content_type: application/zip
