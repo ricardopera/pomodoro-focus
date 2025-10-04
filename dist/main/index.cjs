@@ -549,29 +549,41 @@ function formatState(state) {
 var mainWindow3 = null;
 var isQuitting = false;
 var isDev = process.env.NODE_ENV !== "production";
+var log = (...args) => {
+  if (isDev) {
+    console.log(...args);
+  }
+};
+var logError = (...args) => {
+  if (isDev) {
+    console.error(...args);
+  }
+};
 if (isDev) {
   import_electron3.app.commandLine.appendSwitch("enable-logging");
   import_electron3.app.commandLine.appendSwitch("v", "1");
+} else {
+  import_electron3.app.commandLine.appendSwitch("disable-logging");
 }
 import_electron3.app.commandLine.appendSwitch("disable-gpu");
 import_electron3.app.commandLine.appendSwitch("disable-software-rasterizer");
 process.on("uncaughtException", (error) => {
-  console.error("[MAIN] Uncaught Exception:", error);
+  logError("[MAIN] Uncaught Exception:", error);
 });
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("[MAIN] Unhandled Rejection at:", promise, "reason:", reason);
+  logError("[MAIN] Unhandled Rejection at:", promise, "reason:", reason);
 });
 import_electron3.app.on("will-quit", () => {
-  console.log("[MAIN] will-quit event");
+  log("[MAIN] will-quit event");
 });
 import_electron3.app.on("quit", () => {
-  console.log("[MAIN] quit event");
+  log("[MAIN] quit event");
   import_electron3.ipcMain.removeAllListeners();
 });
 function createWindow() {
-  console.log("[MAIN] Creating window...");
+  log("[MAIN] Creating window...");
   const settings = getSettings();
-  console.log("[MAIN] Settings loaded:", settings);
+  log("[MAIN] Settings loaded:", settings);
   const iconPath = import_electron3.app.isPackaged ? import_path2.default.join(process.resourcesPath, "icons", "app-icon.png") : import_path2.default.join(__dirname, "../../public/icons/app-icon.png");
   mainWindow3 = new import_electron3.BrowserWindow({
     width: 400,
@@ -595,73 +607,73 @@ function createWindow() {
     }
   });
   const ELECTRON_RENDERER_URL = process.env.ELECTRON_RENDERER_URL;
-  console.log("[MAIN] ELECTRON_RENDERER_URL:", ELECTRON_RENDERER_URL);
-  console.log("[MAIN] Loading URL...");
-  console.log("[MAIN] __dirname:", __dirname);
-  console.log("[MAIN] app.isPackaged:", import_electron3.app.isPackaged);
+  log("[MAIN] ELECTRON_RENDERER_URL:", ELECTRON_RENDERER_URL);
+  log("[MAIN] Loading URL...");
+  log("[MAIN] __dirname:", __dirname);
+  log("[MAIN] app.isPackaged:", import_electron3.app.isPackaged);
   if (ELECTRON_RENDERER_URL) {
     mainWindow3.loadURL(ELECTRON_RENDERER_URL);
-    console.log("[MAIN] Loaded from dev server:", ELECTRON_RENDERER_URL);
+    log("[MAIN] Loaded from dev server:", ELECTRON_RENDERER_URL);
   } else if (import_electron3.app.isPackaged) {
     const indexPath = import_path2.default.join(__dirname, "..", "renderer", "index.html");
-    console.log("[MAIN] Loading from:", indexPath);
+    log("[MAIN] Loading from:", indexPath);
     mainWindow3.loadFile(indexPath);
-    console.log("[MAIN] Loaded from file (packaged)");
+    log("[MAIN] Loaded from file (packaged)");
   } else {
     mainWindow3.loadURL("http://localhost:5173");
-    console.log("[MAIN] Loaded from local dev server");
+    log("[MAIN] Loaded from local dev server");
   }
-  console.log("[MAIN] Window created");
+  log("[MAIN] Window created");
   mainWindow3.on("close", (event) => {
-    console.log("[MAIN] Window close event, isQuitting:", isQuitting, "minimizeToTray:", settings.minimizeToTray);
+    log("[MAIN] Window close event, isQuitting:", isQuitting, "minimizeToTray:", settings.minimizeToTray);
     if (!isQuitting && settings.minimizeToTray) {
       event.preventDefault();
       mainWindow3?.hide();
-      console.log("[MAIN] Window hidden (minimized to tray)");
+      log("[MAIN] Window hidden (minimized to tray)");
     }
   });
   mainWindow3.on("closed", () => {
-    console.log("[MAIN] Window closed event");
+    log("[MAIN] Window closed event");
     mainWindow3 = null;
   });
   mainWindow3.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
-    console.error("[MAIN] Failed to load:", errorCode, errorDescription);
+    logError("[MAIN] Failed to load:", errorCode, errorDescription);
   });
   mainWindow3.webContents.on("crashed", () => {
-    console.error("[MAIN] Renderer process crashed");
+    logError("[MAIN] Renderer process crashed");
   });
   mainWindow3.webContents.on("render-process-gone", (_event, details) => {
-    console.error("[MAIN] Renderer process gone:", details);
-    console.error("[MAIN] Reason:", details.reason);
-    console.error("[MAIN] Exit code:", details.exitCode);
+    logError("[MAIN] Renderer process gone:", details);
+    logError("[MAIN] Reason:", details.reason);
+    logError("[MAIN] Exit code:", details.exitCode);
   });
   mainWindow3.webContents.on("did-finish-load", () => {
-    console.log("[MAIN] Page finished loading");
+    log("[MAIN] Page finished loading");
     mainWindow3?.show();
     mainWindow3?.focus();
-    console.log("[MAIN] Window shown and focused");
+    log("[MAIN] Window shown and focused");
   });
   mainWindow3.webContents.on("dom-ready", () => {
-    console.log("[MAIN] DOM ready");
+    log("[MAIN] DOM ready");
   });
   mainWindow3.on("unresponsive", () => {
-    console.error("[MAIN] Window became unresponsive");
+    logError("[MAIN] Window became unresponsive");
   });
   mainWindow3.on("responsive", () => {
-    console.log("[MAIN] Window became responsive again");
+    log("[MAIN] Window became responsive again");
   });
   return mainWindow3;
 }
 import_electron3.app.whenReady().then(() => {
-  console.log("[MAIN] App is ready");
+  log("[MAIN] App is ready");
   createWindow();
-  console.log("[MAIN] IPC handlers setup");
+  log("[MAIN] IPC handlers setup");
   if (mainWindow3) {
     setupIpcHandlers(mainWindow3);
   }
   if (mainWindow3) {
     createTray(mainWindow3);
-    console.log("[MAIN] Tray created");
+    log("[MAIN] Tray created");
   }
   import_electron3.app.on("activate", () => {
     if (import_electron3.BrowserWindow.getAllWindows().length === 0) {
@@ -672,16 +684,16 @@ import_electron3.app.whenReady().then(() => {
   });
 });
 import_electron3.app.on("window-all-closed", () => {
-  console.log("[MAIN] window-all-closed event, platform:", process.platform);
+  log("[MAIN] window-all-closed event, platform:", process.platform);
 });
 import_electron3.app.on("before-quit", () => {
-  console.log("[MAIN] before-quit event");
+  log("[MAIN] before-quit event");
   isQuitting = true;
   cleanupIpcHandlers();
   destroyTray();
 });
 import_electron3.app.on("will-quit", () => {
-  console.log("[MAIN] App will quit");
+  log("[MAIN] App will quit");
   import_electron3.ipcMain.removeAllListeners();
 });
 //# sourceMappingURL=index.cjs.map

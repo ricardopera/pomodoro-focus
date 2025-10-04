@@ -153,14 +153,28 @@ if (!fs.existsSync(buildDir)) {
 
 console.log('🎨 Generating app icons...');
 
-const pngIcon = createPngIcon();
-const pngPath = path.join(iconsDir, 'app-icon.png');
+// Check if custom icon exists, otherwise generate programmatic one
+const customIconPath = path.join(iconsDir, 'app-icon.png');
+let pngIcon;
+
+if (fs.existsSync(customIconPath)) {
+  console.log('📸 Using existing app-icon.png');
+  pngIcon = fs.readFileSync(customIconPath);
+} else {
+  console.log('🎨 Generating programmatic icon');
+  pngIcon = createPngIcon();
+}
+
 const buildPngPath = path.join(buildIconsDir, 'app-icon.png');
 
-fs.writeFileSync(pngPath, pngIcon);
-fs.writeFileSync(buildPngPath, pngIcon);
+// Only write to public/icons if it doesn't exist
+if (!fs.existsSync(customIconPath)) {
+  const pngPath = path.join(iconsDir, 'app-icon.png');
+  fs.writeFileSync(pngPath, pngIcon);
+  console.log(`✅ Generated ${pngPath}`);
+}
 
-console.log(`✅ Generated ${pngPath}`);
+fs.writeFileSync(buildPngPath, pngIcon);
 console.log(`✅ Generated ${buildPngPath}`);
 
 // Generate ICO for Windows

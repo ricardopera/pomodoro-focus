@@ -88,7 +88,17 @@ if (fs.existsSync(srcNodeModules)) {
 // Remove old asar if exists
 if (fs.existsSync(asarPath)) {
   console.log('🗑️  Removing old app.asar...');
-  fs.unlinkSync(asarPath);
+  try {
+    fs.unlinkSync(asarPath);
+  } catch (err) {
+    if (err.code === 'EBUSY') {
+      console.log('⚠️  File is busy, renaming instead...');
+      const backupPath = asarPath + '.backup' + Date.now();
+      fs.renameSync(asarPath, backupPath);
+    } else {
+      throw err;
+    }
+  }
 }
 
 // Pack into asar
