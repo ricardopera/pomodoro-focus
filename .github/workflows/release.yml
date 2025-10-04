@@ -122,74 +122,74 @@ jobs:
           path: release/win-unpacked/
           retention-days: 1
 
-  build-linux:
-    needs: get-version
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # build-linux:
+  #   needs: get-version
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+  #     - name: Install dependencies
+  #       run: npm ci
 
-      - name: Build Linux executables
-        run: npm run dist:linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Build Linux executables
+  #       run: npm run dist:linux
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List release files
-        run: ls -lh release/
+  #     - name: List release files
+  #       run: ls -lh release/
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-artifacts
-          path: |
-            release/*.AppImage
-            release/*.deb
-          retention-days: 1
+  #     - name: Upload artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: linux-artifacts
+  #         path: |
+  #           release/*.AppImage
+  #           release/*.deb
+  #         retention-days: 1
 
-  build-macos:
-    needs: get-version
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # build-macos:
+  #   needs: get-version
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+  #     - name: Install dependencies
+  #       run: npm ci
 
-      - name: Build macOS executables
-        run: npm run dist:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Build macOS executables
+  #       run: npm run dist:mac
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List release files
-        run: ls -lh release/
+  #     - name: List release files
+  #       run: ls -lh release/
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: |
-            release/*.dmg
-            release/*-mac.zip
-          retention-days: 1
+  #     - name: Upload artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: macos-artifacts
+  #         path: |
+  #           release/*.dmg
+  #           release/*-mac.zip
+  #         retention-days: 1
 
   create-release:
-    needs: [get-version, build-windows, build-linux, build-macos]
+    needs: [get-version, build-windows] #, build-linux, build-macos]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -201,17 +201,17 @@ jobs:
           name: windows-artifacts
           path: release/
 
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-artifacts
-          path: release/
+      # - name: Download Linux artifacts
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: linux-artifacts
+      #     path: release/
 
-      - name: Download macOS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-artifacts
-          path: release/
+      # - name: Download macOS artifacts
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: macos-artifacts
+      #     path: release/
 
       - name: List all artifacts
         run: ls -lh release/
