@@ -58,24 +58,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Post-build: Ensure GUI mode (backup fix)
+      - name: Post-build GUI mode fix
         shell: pwsh
         run: |
           Write-Host "Running post-build fix script..."
-          & .\scripts\post-build-fix.ps1
+          .\scripts\post-build-fix.ps1
 
-      - name: Verify executable subsystem (debug)
+      - name: Verify executable
         shell: pwsh
         run: |
-          Write-Host "Checking if executable is GUI mode..."
+          Write-Host "Checking executable..."
           $exePath = "release\win-unpacked\Pomodoro Focus.exe"
           if (Test-Path $exePath) {
-            Write-Host "✅ Executable found: $exePath"
+            Write-Host "Found: $exePath"
             $fileInfo = Get-Item $exePath
-            Write-Host "   Size: $($fileInfo.Length) bytes"
-            Write-Host "   Modified: $($fileInfo.LastWriteTime)"
+            Write-Host "Size: $($fileInfo.Length) bytes"
           } else {
-            Write-Host "❌ Executable not found at: $exePath"
+            Write-Host "Not found: $exePath"
           }
 
       - name: List release files
