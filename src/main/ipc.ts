@@ -1,119 +1,55 @@
-import { ipcMain, BrowserWindow } from 'electron';
-import { IPC_CHANNELS } from '@shared/constants';
-import type { AppState, Settings, Session, Statistics } from '@shared/types';
-import { getSettings, updateSettings, resetSettings, getSessions } from './store';
-import { 
-  startTimer, 
-  pauseTimer, 
-  resumeTimer, 
-  resetTimer,
-  setTimerTickCallback,
-  setTimerCompleteCallback,
-} from './timer';
-import { calculateStatistics } from './statistics';
+import { ipcMain, type BrowserWindow } from 'electron';
+import { IPC } from '../shared/constants';
+import type { AppData, NotifyPayload, TrayState, WindowMode } from '../shared/types';
+import { showNotification } from './notifications';
+import type { Store } from './store';
+import type { AppTray } from './tray';
+import { applyWindowMode } from './window';
 
-let mainWindow: BrowserWindow | null = null;
+interface WiringContext {
+  window: BrowserWindow;
+  store: Store;
+  tray: AppTray;
+  /** Called when the user closes the window; decides hide vs quit. */
+  requestClose: () => void;
+}
 
-export function setupIpcHandlers(window: BrowserWindow): void {
-  mainWindow = window;
+export function registerIpc({ window, store, tray, requestClose }: WiringContext): void {
+  ipcMain.handle(IPC.dataLoad, () => store.data);
 
-  // Setup timer callbacks to send events to renderer
-  setTimerTickCallback((state: AppState) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(IPC_CHANNELS.TIMER_TICK, state);
-    }
+  ipcMain.on(IPC.dataSave, (_event, data: AppData) => {
+    store.set(data);
   });
 
-  setTimerCompleteCallback(() => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(IPC_CHANNELS.TIMER_COMPLETE);
-    }
+  ipcMain.on(IPC.windowMinimize, () => window.minimize());
+  ipcMain.on(IPC.windowClose, () => requestClose());
+
+  ipcMain.on(IPC.windowMode, (_event, mode: WindowMode) => {
+    applyWindowMode(window, mode, store.data.settings.alwaysOnTop);
   });
 
-  // Settings handlers
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, (): Settings => {
-    return getSettings();
+  ipcMain.on(IPC.windowAlwaysOnTop, (_event, value: boolean) => {
+    window.setAlwaysOnTop(value, 'floating');
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_UPDATE, (_event, partial: Partial<Settings>): Settings => {
-    const updated = updateSettings(partial);
-    
-    // Notify renderer of settings change
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(IPC_CHANNELS.SETTINGS_CHANGED, updated);
-    }
-    
-    return updated;
+  ipcMain.on(IPC.progressSet, (_event, fraction: number) => {
+    // -1 removes the taskbar progress bar on Windows.
+    const value = Number.isFinite(fraction) ? Math.min(1, Math.max(0, fraction)) : -1;
+    window.setProgressBar(fraction < 0 ? -1 : value);
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_RESET, (): Settings => {
-    const defaults = resetSettings();
-    
-    // Notify renderer of settings change
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(IPC_CHANNELS.SETTINGS_CHANGED, defaults);
-    }
-    
-    return defaults;
+  ipcMain.on(IPC.notify, (_event, payload: NotifyPayload) => {
+    showNotification(window, payload);
   });
 
-  // Timer handlers
-  ipcMain.handle(IPC_CHANNELS.TIMER_START, (_event, type: 'focus' | 'break-short' | 'break-long'): AppState => {
-    const settings = getSettings();
-    const duration = type === 'focus' ? settings.focusDuration :
-                     type === 'break-short' ? settings.shortBreakDuration :
-                     settings.longBreakDuration;
-    
-    return startTimer(type, duration);
-  });
-
-  ipcMain.handle(IPC_CHANNELS.TIMER_PAUSE, (): AppState => {
-    return pauseTimer();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.TIMER_RESUME, (): AppState => {
-    return resumeTimer();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.TIMER_RESET, (): AppState => {
-    return resetTimer();
-  });
-
-  // Sessions handler
-  ipcMain.handle(IPC_CHANNELS.SESSIONS_GET, (): Session[] => {
-    return getSessions();
-  });
-
-  // Statistics handler
-  ipcMain.handle(IPC_CHANNELS.STATISTICS_GET, (): Statistics => {
-    return calculateStatistics();
-  });
-
-  // Window control handlers
-  ipcMain.on('window:minimize', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.minimize();
-    }
-  });
-
-  ipcMain.on('window:close', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.close();
-    }
+  ipcMain.on(IPC.trayUpdate, (_event, state: TrayState) => {
+    tray.update(state);
   });
 }
 
-export function cleanupIpcHandlers(): void {
-  // Remove all handlers
-  ipcMain.removeHandler(IPC_CHANNELS.SETTINGS_GET);
-  ipcMain.removeHandler(IPC_CHANNELS.SETTINGS_UPDATE);
-  ipcMain.removeHandler(IPC_CHANNELS.SETTINGS_RESET);
-  ipcMain.removeHandler(IPC_CHANNELS.TIMER_START);
-  ipcMain.removeHandler(IPC_CHANNELS.TIMER_PAUSE);
-  ipcMain.removeHandler(IPC_CHANNELS.TIMER_RESUME);
-  ipcMain.removeHandler(IPC_CHANNELS.TIMER_RESET);
-  ipcMain.removeHandler(IPC_CHANNELS.SESSIONS_GET);
-  ipcMain.removeHandler(IPC_CHANNELS.STATISTICS_GET);
-  
-  mainWindow = null;
+export function unregisterIpc(): void {
+  for (const channel of Object.values(IPC)) {
+    ipcMain.removeHandler(channel);
+    ipcMain.removeAllListeners(channel);
+  }
 }

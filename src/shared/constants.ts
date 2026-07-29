@@ -1,65 +1,80 @@
-import type { Settings } from './types';
+import type { AppData, PhaseKind, Settings, TimerSnapshot } from './types';
 
-// Default settings values
+export const DATA_VERSION = 2;
+
 export const DEFAULT_SETTINGS: Settings = {
-  focusDuration: 25,
-  shortBreakDuration: 5,
-  longBreakDuration: 15,
-  sessionsBeforeLongBreak: 4,
-  theme: 'system',
-  notificationsEnabled: true,
-  soundEnabled: true,
-  minimizeToTray: true,
+  focusMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  longBreakInterval: 4,
   autoStartBreaks: true,
   autoStartFocus: false,
+  requireSessionName: false,
+  notificationsEnabled: true,
+  soundEnabled: true,
+  soundVolume: 0.6,
+  tickingEnabled: false,
+  alwaysOnTop: false,
+  minimizeToTray: true,
+  focusDimming: true,
+  theme: 'midnight',
+  dailyGoal: 8,
 };
 
-// Timer states
-export const TIMER_STATES = {
-  IDLE: 'idle' as const,
-  FOCUS: 'focus' as const,
-  BREAK_SHORT: 'break-short' as const,
-  BREAK_LONG: 'break-long' as const,
+export const DEFAULT_TIMER: TimerSnapshot = {
+  kind: 'focus',
+  status: 'idle',
+  plannedSeconds: DEFAULT_SETTINGS.focusMinutes * 60,
+  remainingSeconds: DEFAULT_SETTINGS.focusMinutes * 60,
+  deadline: null,
+  startedAt: null,
+  cycleCount: 0,
+  title: '',
+  notes: '',
+  taskId: null,
 };
 
-// IPC Channel names
-export const IPC_CHANNELS = {
-  // Settings
-  SETTINGS_GET: 'settings:get',
-  SETTINGS_UPDATE: 'settings:update',
-  SETTINGS_RESET: 'settings:reset',
-  SETTINGS_CHANGED: 'settings:changed',
+export const DEFAULT_DATA: AppData = {
+  version: DATA_VERSION,
+  settings: DEFAULT_SETTINGS,
+  tasks: [],
+  sessions: [],
+  timer: DEFAULT_TIMER,
+};
 
-  // Timer
-  TIMER_START: 'timer:start',
-  TIMER_PAUSE: 'timer:pause',
-  TIMER_RESUME: 'timer:resume',
-  TIMER_RESET: 'timer:reset',
-  TIMER_TICK: 'timer:tick',
-  TIMER_COMPLETE: 'timer:complete',
-
-  // Sessions
-  SESSIONS_GET: 'sessions:get',
-  
-  // Statistics
-  STATISTICS_GET: 'statistics:get',
+/** Bounds used by the settings screen and by sanitisation on load. */
+export const LIMITS = {
+  focusMinutes: { min: 1, max: 180 },
+  shortBreakMinutes: { min: 1, max: 60 },
+  longBreakMinutes: { min: 1, max: 120 },
+  longBreakInterval: { min: 2, max: 12 },
+  dailyGoal: { min: 1, max: 24 },
 } as const;
 
-// Validation constants
-export const VALIDATION = {
-  FOCUS_DURATION_MIN: 1,
-  FOCUS_DURATION_MAX: 60,
-  SHORT_BREAK_MIN: 1,
-  SHORT_BREAK_MAX: 30,
-  LONG_BREAK_MIN: 5,
-  LONG_BREAK_MAX: 60,
-  SESSIONS_BEFORE_LONG_BREAK_MIN: 2,
-  SESSIONS_BEFORE_LONG_BREAK_MAX: 10,
-} as const;
+export const PHASE_LABEL: Record<PhaseKind, string> = {
+  focus: 'Foco',
+  shortBreak: 'Pausa curta',
+  longBreak: 'Pausa longa',
+};
 
-// Performance targets
-export const PERFORMANCE = {
-  STARTUP_TARGET_MS: 200,
-  MEMORY_TARGET_MB: 100,
-  TIMER_PRECISION_TOLERANCE_MS: 2000, // ±2s in 25min
+export const PHASE_TAGLINE: Record<PhaseKind, string> = {
+  focus: 'Uma coisa de cada vez.',
+  shortBreak: 'Respire, alongue, olhe longe.',
+  longBreak: 'Descanse de verdade. Você merece.',
+};
+
+/** Maximum number of sessions kept in the history log. */
+export const MAX_SESSIONS = 2000;
+
+export const IPC = {
+  dataLoad: 'data:load',
+  dataSave: 'data:save',
+  windowMinimize: 'window:minimize',
+  windowClose: 'window:close',
+  windowMode: 'window:mode',
+  windowAlwaysOnTop: 'window:always-on-top',
+  progressSet: 'progress:set',
+  notify: 'notify',
+  trayUpdate: 'tray:update',
+  command: 'app:command',
 } as const;

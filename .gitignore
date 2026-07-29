@@ -5,10 +5,16 @@ node_modules
 # .specify
 # specs
 
-# Build outputs
+# Build outputs (gerados por `npm run build:prod`)
 dist
 release
 build/icon.png
+build/icon.ico
+build/*x*/icon.png
+
+# Logs e caches
+*.log
+.eslintcache
 
 # Zip files
 *.zip

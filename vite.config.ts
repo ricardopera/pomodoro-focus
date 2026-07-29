@@ -1,25 +1,41 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
 
-// https://vitejs.dev/config/
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8')) as {
+  version: string;
+};
+
 export default defineConfig({
   plugins: [react()],
-  base: './', // Use relative paths for Electron
+  // Relative paths so the built UI loads over file:// inside Electron.
+  base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@renderer': resolve(__dirname, 'src/renderer'),
-      '@main': resolve(__dirname, 'src/main'),
       '@shared': resolve(__dirname, 'src/shared'),
-      '@preload': resolve(__dirname, 'src/preload'),
+      '@renderer': resolve(__dirname, 'src/renderer'),
     },
   },
   build: {
     outDir: 'dist/renderer',
     emptyOutDir: true,
+    target: 'chrome120',
   },
   server: {
     port: 5173,
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/shared/**'],
+    },
   },
 });
