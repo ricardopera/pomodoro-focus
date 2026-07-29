@@ -1,0 +1,42 @@
+name: Build Windows
+
+# Empacota o instalador e a versão portátil no Windows e sobe os dois como
+# artefatos da execução (sem criar release). O passo do NSIS só roda de forma
+# nativa no Windows, então este build não pode ser feito no runner Linux.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'claude/**'
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer and portable
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List artifacts
+        run: dir release
+
+      - name: Upload executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: pomodoro-focus-windows
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
