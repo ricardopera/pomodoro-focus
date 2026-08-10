@@ -1,409 +1,100 @@
-# 🔨 Guia de Build - Pomodoro Focus
+# Build e distribuição
 
-Este documento descreve como compilar e criar executáveis do Pomodoro Focus para diferentes plataformas.
+## Pré-requisitos
 
-## 📋 Pré-requisitos
+- Node.js 20 ou superior
+- Windows 10/11 para gerar os binários do Windows (o electron-builder empacota
+  para a plataforma em que roda; instalador NSIS exige Windows)
+- `npm install` na raiz do projeto
 
-- Node.js 18 ou superior
-- npm 8 ou superior
-- Git
-
-### Requisitos Específicos por Plataforma
-
-#### Windows
-- Windows 10 ou superior
-- Nenhuma dependência adicional necessária
-
-#### macOS
-- macOS 10.13 ou superior
-- Xcode Command Line Tools (instalado automaticamente)
-
-#### Linux
-- Distribuições baseadas em Debian/Ubuntu (para DEB)
-- Qualquer distribuição moderna (para AppImage)
-- Ferramentas de build: `build-essential`
+## Compilar
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get install build-essential
+npm run build          # processo principal + preload (esbuild) e interface (Vite)
+npm run build:prod     # gera os ícones antes de compilar
 ```
 
-## 🚀 Build de Desenvolvimento
+Saída:
 
-### 1. Clonar e Configurar
-
-```bash
-# Clone o repositório
-git clone https://github.com/ricardopera/pomodoro-focus.git
-cd pomodoro-focus
-
-# Instale as dependências
-npm install
+```
+dist/main/index.cjs        processo principal
+dist/preload/index.cjs     ponte de contexto isolado
+dist/renderer/             interface compilada (HTML/CSS/JS)
 ```
 
-### 2. Executar em Modo Desenvolvimento
+## Ícones
+
+Os ícones nascem de dois SVGs versionados em `public/icons/`:
 
 ```bash
-# Inicia o aplicativo com hot-reload
-npm run dev
+npm run icons
 ```
 
-O aplicativo abrirá automaticamente com:
-- **Main Process**: Recarrega automaticamente ao detectar mudanças
-- **Renderer**: Hot Module Replacement (HMR) via Vite
+Isso rasteriza (com `sharp`) e grava:
 
-## 🏗️ Build de Produção
+- `public/icons/app-icon.png` — ícone da janela e das notificações
+- `public/icons/tray-icon.png` — glifo da bandeja (32 px)
+- `build/icon.ico` — ícone do Windows (16 a 256 px em um único arquivo)
+- `build/icon.png` e `build/<tamanho>x<tamanho>/icon.png` — macOS e Linux
 
-### Build Completo
+Para mudar a identidade visual, edite os SVGs e rode o script de novo.
+
+## Gerar os executáveis
 
 ```bash
-# Build de produção otimizado
-npm run build:prod
+npm run dist:win       # Windows: instalador NSIS + portátil
+npm run dist:linux     # Linux: AppImage
+npm run pack           # apenas descompactado, para testar (release/win-unpacked)
 ```
 
-Este comando executa:
-1. `prepare-build.js` - Prepara diretório de build e copia ícones
-2. `generate-sounds.js` - Gera arquivos de som WAV
-3. `generate-icons.js` - Gera ícones PNG
-4. `build-electron.js` - Compila main process e preload com esbuild
-5. `vite build` - Compila renderer com Vite
+Os artefatos ficam em `release/`:
 
-**Saída**: Pasta `dist/` com código compilado
+- `PomodoroFocus-Setup-<versão>.exe` — instalador por usuário, com opção de
+  escolher a pasta e atalhos no menu Iniciar e na área de trabalho.
+- `PomodoroFocus-Portable-<versão>.exe` — executável único, sem instalação.
 
-### Build Parcial (Desenvolvimento)
+## Assinatura de código
 
-```bash
-# Apenas build do código (sem assets)
-npm run build
+Os builds saem **sem assinatura** (`signAndEditExecutable: false`). Isso faz o
+SmartScreen exibir um aviso na primeira execução. Para assinar, defina as
+variáveis de ambiente do electron-builder antes de `npm run dist:win`:
 
-# Apenas main process
-npm run build:electron
-
-# Apenas renderer
-npm run build:renderer
-```
-
-## 📦 Criar Executáveis
-
-### Windows 🪟
-
-```bash
+```powershell
+$env:CSC_LINK = "caminho\para\certificado.pfx"
+$env:CSC_KEY_PASSWORD = "senha"
 npm run dist:win
 ```
 
-**Artefatos gerados** (pasta `release/`):
-- `Pomodoro Focus Setup 1.0.0.exe` - Instalador NSIS (~80-100 MB)
-- `PomodoroFocus-Portable-1.0.0.exe` - Versão portátil (~80-100 MB)
+## Publicação automática
 
-**Tempo estimado**: 8-10 minutos
+O workflow `.github/workflows/release.yml` roda a cada tag `v*.*.*`:
 
-### Linux 🐧
+1. compila no `windows-latest` com `npm run dist:win`;
+2. sobe os `.exe` como artefatos;
+3. cria a release no GitHub com esses arquivos.
 
-```bash
-npm run dist:linux
-```
-
-**Artefatos gerados** (pasta `release/`):
-- `Pomodoro Focus-1.0.0.AppImage` - Universal (~100-120 MB)
-- `pomodoro-focus_1.0.0_amd64.deb` - Debian/Ubuntu (~70 MB)
-
-**Tempo estimado**: 6-8 minutos
-
-### macOS 🍎
+Para publicar uma versão nova:
 
 ```bash
-npm run dist:mac
+npm version minor      # atualiza package.json e cria a tag
+git push --follow-tags
 ```
 
-**Artefatos gerados** (pasta `release/`):
-- `Pomodoro Focus-1.0.0.dmg` - Instalador DMG (~90-110 MB)
-- `Pomodoro Focus-1.0.0-mac.zip` - Arquivo ZIP (~85-100 MB)
+A versão exibida na tela de Ajustes vem do `package.json` — o Vite injeta o valor
+em tempo de build (`__APP_VERSION__`), então não há número duplicado para manter.
 
-**Tempo estimado**: 8-10 minutos
+## Problemas comuns
 
-**Nota**: Para distribuir no macOS sem avisos de segurança, você precisará de um Apple Developer Account ($99/ano) para code signing e notarização.
+**`sharp` falha na instalação.** Rode `npm install --include=optional sharp` ou
+apague `node_modules` e instale de novo; ele baixa binários pré-compilados por
+plataforma.
 
-### Todas as Plataformas
+**A janela abre em branco.** Confirme que `dist/renderer/index.html` existe
+(`npm run build:renderer`). Em desenvolvimento, o app carrega
+`ELECTRON_RENDERER_URL`, definido automaticamente por `npm run dev`.
 
-```bash
-npm run dist:all
-```
+**O ícone da bandeja não aparece no Linux.** Vários ambientes precisam de
+`libappindicator`/extensão de área de notificação; no Windows não há nada a fazer.
 
-**Nota**: Requer ambiente apropriado. Geralmente, você precisa:
-- macOS para gerar DMG
-- Windows para gerar EXE
-- Linux para gerar AppImage/DEB
-
-## 🔍 Estrutura de Build
-
-### Diretórios
-
-```
-pomodoro-focus/
-├── build/              # Recursos de build (ícones)
-│   └── icon.png        # Ícone principal (gerado automaticamente)
-├── dist/               # Código compilado
-│   ├── main/           # Main process compilado
-│   ├── preload/        # Preload script compilado
-│   └── renderer/       # Renderer compilado (React)
-├── dist-electron/      # Ícones para Electron
-├── release/            # Executáveis finais
-│   ├── win-unpacked/   # Arquivos descompactados (Windows)
-│   ├── linux-unpacked/ # Arquivos descompactados (Linux)
-│   ├── *.exe           # Instaladores Windows
-│   ├── *.AppImage      # AppImage Linux
-│   ├── *.deb           # Pacote Debian
-│   ├── *.dmg           # Instalador macOS
-│   └── *.zip           # ZIP macOS
-└── scripts/            # Scripts de build
-    ├── prepare-build.js    # Prepara diretório de build
-    ├── generate-sounds.js  # Gera sons
-    ├── generate-icons.js   # Gera ícones
-    └── build-electron.js   # Compila Electron
-```
-
-### Configuração de Build
-
-A configuração do electron-builder está em `package.json` na seção `"build"`:
-
-```json
-{
-  "build": {
-    "appId": "com.ricardopera.pomodoro-focus",
-    "productName": "Pomodoro Focus",
-    "directories": {
-      "buildResources": "build",
-      "output": "release"
-    },
-    "win": { ... },
-    "mac": { ... },
-    "linux": { ... }
-  }
-}
-```
-
-## 🧪 Testes
-
-### Testes Unitários
-
-```bash
-# Executar testes
-npm test
-
-# Executar testes uma vez
-npm run test:unit
-
-# Cobertura de código
-npm run test:coverage
-```
-
-### Testes E2E
-
-```bash
-# Executar testes E2E com Playwright
-npm run test:e2e
-```
-
-### Linter
-
-```bash
-# Executar ESLint
-npm run lint
-
-# Formatar código
-npm run format
-```
-
-## 🐛 Troubleshooting
-
-### Build falha no Windows
-
-**Erro**: "EPERM: operation not permitted"
-
-**Solução**:
-1. Execute PowerShell como Administrador, OU
-2. Ative o Modo Desenvolvedor do Windows:
-   - Win+I → Privacidade e segurança → Para desenvolvedores
-   - Ative "Modo de desenvolvedor"
-
-### Build falha no Linux
-
-**Erro**: "Cannot find module 'fpm'"
-
-**Solução**:
-```bash
-# Ubuntu/Debian
-sudo apt-get install ruby-dev gcc make
-sudo gem install fpm
-```
-
-### Build falha no macOS
-
-**Erro**: "Command failed: xcrun"
-
-**Solução**:
-```bash
-# Instalar Xcode Command Line Tools
-xcode-select --install
-```
-
-### Ícone não aparece
-
-**Problema**: Executável sem ícone
-
-**Solução**:
-1. Verifique se `build/icon.png` existe
-2. Execute `npm run build:prod` novamente
-3. Limpe a pasta release: `rm -rf release`
-
-### Build muito lento
-
-**Dicas de otimização**:
-1. Use SSD (não HDD)
-2. Desative antivírus temporariamente
-3. Aumente memória disponível
-4. Use `npm ci` em vez de `npm install` (CI/CD)
-
-## 📊 Comparação de Tamanhos
-
-| Plataforma | Formato | Tamanho | Compressão |
-|------------|---------|---------|------------|
-| Windows | NSIS Installer | ~95 MB | 7z |
-| Windows | Portable .exe | ~95 MB | - |
-| Linux | AppImage | ~105 MB | gzip |
-| Linux | .deb | ~70 MB | xz |
-| macOS | .dmg | ~100 MB | bzip2 |
-| macOS | .zip | ~90 MB | zip |
-
-**Por que tão grande?**
-- Chromium (engine do Electron): ~70 MB
-- Node.js runtime: ~8 MB
-- React + dependências: ~5 MB
-- Código da aplicação: ~2-3 MB
-- Assets (sons, ícones): ~1 MB
-
-## 🔧 Scripts Customizados
-
-### prepare-build.js
-Prepara o ambiente de build copiando recursos necessários.
-
-```bash
-node scripts/prepare-build.js
-```
-
-### generate-sounds.js
-Gera arquivos WAV de som programaticamente.
-
-```bash
-node scripts/generate-sounds.js
-```
-
-### generate-icons.js
-Gera ícones PNG a partir de código JavaScript.
-
-```bash
-node scripts/generate-icons.js
-```
-
-### build-electron.js
-Compila main process e preload com esbuild.
-
-```bash
-node scripts/build-electron.js
-```
-
-## 🔒 Code Signing
-
-### Windows
-
-Para assinar executáveis Windows:
-
-1. Obter certificado de code signing (~$300/ano)
-2. Configurar no `package.json`:
-
-```json
-{
-  "build": {
-    "win": {
-      "certificateFile": "path/to/cert.pfx",
-      "certificatePassword": "password"
-    }
-  }
-}
-```
-
-### macOS
-
-Para assinar e notarizar no macOS:
-
-1. Apple Developer Account ($99/ano)
-2. Certificado de Developer ID
-3. Configurar no `package.json`:
-
-```json
-{
-  "build": {
-    "mac": {
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "identity": "Developer ID Application: Your Name"
-    },
-    "afterSign": "scripts/notarize.js"
-  }
-}
-```
-
-## 🚀 Otimizações
-
-### Reduzir Tamanho do Build
-
-1. **Remover source maps em produção**:
-   - Editar `vite.config.ts`:
-   ```typescript
-   build: {
-     sourcemap: false
-   }
-   ```
-
-2. **Comprimir melhor**:
-   - Usar `electron-builder-squirrel-windows` (Windows)
-   - Usar `7z` compression (melhor compressão)
-
-3. **Lazy loading**:
-   - Carregar módulos pesados apenas quando necessário
-
-### Acelerar Build
-
-1. **Cache de dependências**:
-   ```bash
-   npm ci --prefer-offline
-   ```
-
-2. **Builds incrementais**:
-   - Não limpar `dist/` entre builds de dev
-
-3. **Paralelização**:
-   - electron-builder já paraliza automaticamente
-
-## 📚 Recursos
-
-- [electron-builder Documentation](https://www.electron.build/)
-- [Electron Documentation](https://www.electronjs.org/docs)
-- [Vite Documentation](https://vitejs.dev/)
-- [esbuild Documentation](https://esbuild.github.io/)
-
-## 🎉 Próximos Passos
-
-Após criar os executáveis:
-
-1. **Testar**: Instale e teste em cada plataforma
-2. **Versionar**: Use SemVer (`npm version patch/minor/major`)
-3. **Release**: Publique via GitHub Releases (manual ou automático)
-4. **Distribuir**: Compartilhe com usuários
-
-Para publicar releases automáticas, veja [RELEASE.md](./RELEASE.md)
-
----
-
-**Última atualização**: 2025-10-04
-**Versão do documento**: 1.0.0
+**O antivírus reclama do portátil.** É consequência do executável não assinado:
+veja a seção de assinatura acima.

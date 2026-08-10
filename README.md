@@ -1,335 +1,146 @@
-# 🍅 Pomodoro Focus
+# Pomodoro Focus
 
-Um aplicativo desktop moderno de timer Pomodoro construído com Electron, React e TypeScript.
+Um aplicativo Pomodoro para desktop (Windows, com build também para Linux e macOS)
+feito para uma coisa só: **você trabalhar 25 minutos sem ser interrompido** — e saber
+depois no que esse tempo foi gasto.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Electron](https://img.shields.io/badge/electron-28.3.3-blue)
-![React](https://img.shields.io/badge/react-18.3.1-blue)
-![TypeScript](https://img.shields.io/badge/typescript-5.9.3-blue)
+Cada sessão de foco tem **nome e descrição**. O histórico deixa de ser uma pilha de
+tomates contados e vira um registro do que você realmente fez.
 
-## ✨ Features
+<p align="center">
+  <img src="docs/screenshots/timer.png" width="300" alt="Tela do timer" />
+  <img src="docs/screenshots/historico.png" width="300" alt="Histórico de sessões" />
+  <img src="docs/screenshots/estatisticas.png" width="300" alt="Estatísticas" />
+</p>
 
-### Core
-- ⏱️ **Timer Pomodoro Completo** - Sessões de foco, pausas curtas e pausas longas
-- 🔄 **Ciclos Automáticos** - Sistema inteligente de sessões (4 focos → 1 pausa longa)
-- 💾 **Persistência de Estado** - Nunca perca seu progresso
-- 🎯 **Configurações Personalizáveis** - Ajuste durações e comportamentos
+## O que ele faz
 
-### Interface
-- 🎨 **Temas Modernos** - Light, Dark e System (detecção automática)
-- 🪟 **Janela Frameless** - Design limpo e minimalista
-- 🍅 **Ícone Profissional** - Visual atraente e reconhecível
-- 📊 **3 Abas Funcionais** - Timer, Estatísticas e Configurações
+**A técnica Pomodoro completa**
 
-### Produtividade
-- 📈 **Estatísticas Detalhadas** - Rastreie seu foco diário e semanal
-- 🔥 **Sistema de Streak** - Mantenha sua sequência de dias produtivos
-- 🔔 **Notificações Nativas** - Alertas do sistema operacional
-- 🔊 **Sistema de Sons** - Feedback sonoro para conclusão de sessões
+- Foco, pausa curta e pausa longa, com durações configuráveis (padrão 25 / 5 / 15).
+- Pausa longa automática a cada N sessões de foco (padrão 4), com os pontinhos do
+  ciclo abaixo do relógio.
+- Início automático de pausas e/ou do próximo foco, se você quiser o fluxo contínuo.
+- Pausar, retomar, reiniciar a etapa, pular a etapa e esticar +5 minutos.
+- Relógio ancorado no horário real: não atrasa em segundo plano nem depois de
+  suspender o computador, e uma sessão em andamento é retomada se você fechar e
+  reabrir o app.
 
-### Sistema
-- 📍 **System Tray** - Ícone na bandeja do sistema
-- 🔽 **Minimize to Tray** - Continue rodando em background
-- 💪 **Baixo Consumo** - Otimizado para performance
-- 🔒 **Seguro** - Sandbox mode e context isolation ativados
+**Nomear e descrever cada sessão** (o coração do app)
 
-## 📸 Screenshots
+- Campo "No que você está trabalhando?" antes de dar play, com sugestões dos nomes
+  já usados.
+- Descrição opcional para o objetivo, o próximo passo ou o que precisa ficar pronto.
+- Nome e descrição ficam gravados na sessão e podem ser editados depois, no histórico.
+- Opção "pedir o nome da sessão", que impede começar um foco sem dizer no que vai
+  trabalhar.
 
-> Em desenvolvimento - Screenshots serão adicionados em breve
+**Tarefas, histórico e números**
 
-## 📥 Download
+- Lista de tarefas com descrição e estimativa de pomodoros; ao focar em uma tarefa,
+  nome e descrição já entram na sessão e o contador dela sobe sozinho.
+- Histórico agrupado por dia, com horário, duração e o que foi feito. Sessões
+  interrompidas aparecem marcadas — sem julgamento, só registro.
+- Estatísticas: pomodoros de hoje, foco dos últimos 7 dias, sequência de dias,
+  total, gráfico de 14 dias e um resumo de **onde o seu foco foi parar**, agrupado
+  pelo nome das sessões.
 
-### Versão Estável (Recomendado)
+**Sem distrações**
 
-Baixe a versão mais recente em: [Releases](https://github.com/ricardopera/pomodoro-focus/releases/latest)
+- Janela sem barra de título do sistema, fundo escuro e uma única coisa em destaque:
+  o tempo restante.
+- Durante o foco a interface escurece e só o relógio permanece; passe o mouse e ela
+  volta.
+- Modo compacto: uma pílula de 340×150 que fica sempre à frente, com o relógio, o
+  nome da sessão e dois botões.
+- Bandeja do sistema com controles, notificação nativa no fim de cada etapa e a
+  barra de progresso do Windows na própria barra de tarefas.
+- Sons sintetizados (sinos suaves, tique-taque opcional) — sem estridência.
+- Quatro temas: Meia-noite, Aurora, Brasa e Papel (claro).
 
-**Windows:**
-- `Pomodoro Focus Setup.exe` - Instalador completo (recomendado)
-- `PomodoroFocus-Portable.exe` - Versão portátil (não requer instalação)
+**Seus dados são seus**
 
-**Linux:**
-- `Pomodoro Focus.AppImage` - Universal (funciona em todas as distros)
-- `pomodoro-focus.deb` - Pacote Debian/Ubuntu
+Tudo fica em um arquivo JSON dentro da pasta do usuário
+(`%APPDATA%\Pomodoro Focus\pomodoro-data.json` no Windows). O app não faz nenhuma
+requisição de rede — não há conta, telemetria ou sincronização.
 
-**macOS:**
-- `Pomodoro Focus.dmg` - Instalador DMG
-- `Pomodoro Focus-mac.zip` - Arquivo ZIP
+## Atalhos
 
-### Desenvolvimento
+| Tecla | Ação |
+| --- | --- |
+| `Espaço` | Iniciar / pausar |
+| `R` | Reiniciar a etapa |
+| `S` | Pular a etapa |
+| `M` | Alternar o modo compacto |
+| `1` `2` `3` | Foco, pausa curta, pausa longa |
 
-Para desenvolvedores que desejam contribuir ou executar a versão de desenvolvimento:
+## Instalação (Windows)
 
-## 🚀 Começando
+Baixe na página de [Releases](../../releases):
 
-### Pré-requisitos
+- `PomodoroFocus-Setup-<versão>.exe` — instalador (atalho no menu Iniciar e na área
+  de trabalho).
+- `PomodoroFocus-Portable-<versão>.exe` — versão portátil, sem instalação.
 
-- Node.js 18+ 
-- npm ou yarn
-- Windows, macOS ou Linux
+O executável não é assinado digitalmente, então o SmartScreen pode pedir
+"Mais informações → Executar assim mesmo" na primeira vez.
 
-### Instalação
+## Desenvolvimento
+
+Requisitos: Node.js 20+.
 
 ```bash
-# Clone o repositório
-git clone https://github.com/ricardopera/pomodoro-focus.git
-cd pomodoro-focus
-
-# Instale as dependências
 npm install
-
-# Gere os assets necessários
-node scripts/generate-sounds.js
-node scripts/generate-icons.js
+npm run dev          # Vite + Electron em modo de desenvolvimento
 ```
 
-### Desenvolvimento
+| Script | O que faz |
+| --- | --- |
+| `npm run dev` | Sobe o app em desenvolvimento (F12 abre o DevTools) |
+| `npm run build` | Compila o processo principal, o preload e a interface |
+| `npm run build:prod` | Gera os ícones e compila tudo |
+| `npm run dist:win` | Instalador + portátil para Windows em `release/` |
+| `npm run test:unit` | Testes unitários (Vitest) |
+| `npm run typecheck` | TypeScript em modo estrito |
+| `npm run lint` | ESLint |
+
+Detalhes de empacotamento e publicação estão em [BUILD.md](BUILD.md).
+
+## Arquitetura
+
+```
+src/
+  shared/      Domínio puro e testável: tipos, regras do Pomodoro, estatísticas,
+               formatação. Sem Electron, sem DOM.
+  main/        Processo principal: janela, bandeja, notificações, IPC e o store
+               JSON (escrita atômica com backup).
+  preload/     Ponte de contexto isolado: expõe uma API pequena e tipada.
+  renderer/    Interface em React: o motor do timer (useTimer), as telas e o CSS.
+```
+
+Algumas decisões que valem o comentário:
+
+- **O tempo vem do relógio da parede.** O timer guarda um *deadline* e recalcula
+  o que falta a cada 250 ms, então ele não acumula atraso nem depende do
+  `setInterval` ser pontual.
+- **O contexto do renderer é isolado** (`contextIsolation: true`,
+  `nodeIntegration: false`) e o preload expõe apenas dez funções.
+- **Os sons são sintetizados** com a Web Audio API — nada de arquivos de áudio
+  para carregar (ou faltar) dentro do pacote.
+- **A interface funciona no navegador** também: sem Electron, o app cai para
+  `localStorage`, o que torna o desenvolvimento e os testes visuais bem mais rápidos.
+
+## Testes
 
 ```bash
-# Compile o código
-node scripts/build-electron.js
-
-# Execute em modo desenvolvimento
-npm run dev
+npm run test:unit
 ```
 
-O aplicativo abrirá automaticamente com hot-reload ativado para o renderer.
+Os testes cobrem a camada `src/shared`: a máquina de estados do Pomodoro
+(incluindo a pausa longa e o caso da sessão pulada), a restauração do timer após
+fechar o app, as estatísticas (hoje, semana, sequência, agrupamento por nome) e a
+formatação.
 
-### Build de Produção
+## Licença
 
-```bash
-# Build completo
-npm run build
-
-# Criar executável (em desenvolvimento)
-npm run package
-```
-
-## 🎯 Como Usar
-
-### Timer Pomodoro
-
-1. **Iniciar Sessão de Foco**
-   - Clique em "Iniciar Foco" (25 minutos padrão)
-   - O timer começará a contar
-   - Foque em sua tarefa!
-
-2. **Pausar/Retomar**
-   - Clique em "Pausar" para interromper temporariamente
-   - Clique em "Retomar" para continuar de onde parou
-
-3. **Completar Sessão**
-   - Quando o timer chegar a zero:
-     - Receberá uma notificação
-     - Ouvirá um som (se ativado)
-     - Iniciará automaticamente a pausa (se configurado)
-
-4. **Ciclo Completo**
-   - Após 4 sessões de foco → Pausa longa (15 minutos)
-   - O ciclo recomeça automaticamente
-
-### Configurações Disponíveis
-
-| Configuração | Descrição | Padrão |
-|-------------|-----------|--------|
-| Duração do Foco | Tempo de concentração | 25 min |
-| Pausa Curta | Descanso entre focos | 5 min |
-| Pausa Longa | Descanso após ciclo | 15 min |
-| Sessões por Ciclo | Focos antes da pausa longa | 4 |
-| Tema | Visual do app | System |
-| Notificações | Alertas do sistema | Ativado |
-| Sons | Feedback sonoro | Ativado |
-| Minimizar para Bandeja | Continuar em background | Ativado |
-| Auto-iniciar Pausas | Iniciar pausas automaticamente | Ativado |
-| Auto-iniciar Foco | Iniciar foco após pausas | Desativado |
-
-### Estatísticas
-
-Acompanhe sua produtividade:
-- **Foco Hoje** - Minutos de concentração no dia atual
-- **Sessões Hoje** - Pomodoros completados hoje
-- **Foco na Semana** - Total semanal de minutos
-- **Sessões na Semana** - Total semanal de pomodoros
-- **Streak Atual** - Dias consecutivos de uso
-- **Melhor Streak** - Maior sequência alcançada
-
-## 🏗️ Arquitetura
-
-### Estrutura do Projeto
-
-```
-pomodoro-focus/
-├── src/
-│   ├── main/              # Electron main process
-│   │   ├── index.ts       # Entry point, gerenciamento de janelas
-│   │   ├── ipc.ts         # IPC handlers
-│   │   ├── timer.ts       # Lógica do timer
-│   │   ├── store.ts       # Persistência (electron-store)
-│   │   ├── tray.ts        # System tray
-│   │   ├── notifications.ts
-│   │   └── statistics.ts
-│   ├── preload/           # Secure bridge
-│   │   └── index.ts       # ElectronAPI exposure
-│   ├── renderer/          # React app
-│   │   ├── App.tsx
-│   │   ├── components/    # UI components
-│   │   │   ├── TimerDisplay.tsx
-│   │   │   ├── TimerControls.tsx
-│   │   │   ├── StatisticsView.tsx
-│   │   │   └── SettingsView.tsx
-│   │   └── hooks/         # Custom React hooks
-│   │       ├── useTimer.ts
-│   │       ├── useSettings.ts
-│   │       └── useStatistics.ts
-│   └── shared/
-│       ├── types.ts       # TypeScript types
-│       └── constants.ts   # Shared constants
-├── public/
-│   ├── icons/             # App e tray icons
-│   └── sounds/            # Arquivos de som
-├── scripts/               # Build e utilidades
-│   ├── build-electron.js
-│   ├── dev.js
-│   ├── generate-icons.js
-│   └── generate-sounds.js
-├── dist/                  # Arquivos compilados
-└── docs/                  # Documentação
-```
-
-### Stack Tecnológico
-
-- **Framework**: Electron 28.3.3
-- **UI Library**: React 18.3.1
-- **Language**: TypeScript 5.9.3
-- **Bundler**: esbuild (main/preload) + Vite (renderer)
-- **State Management**: React Hooks + electron-store
-- **Styling**: CSS Modules + CSS Variables
-
-### Comunicação IPC
-
-Type-safe IPC entre main e renderer:
-
-```typescript
-// Renderer → Main
-window.electronAPI.timer.start('focus')
-window.electronAPI.settings.update({ theme: 'dark' })
-
-// Main → Renderer (eventos)
-window.electronAPI.timer.onTick((state) => { ... })
-window.electronAPI.timer.onComplete(() => { ... })
-```
-
-## 🔒 Segurança
-
-- ✅ **Context Isolation** - Isolamento completo entre processos
-- ✅ **Node Integration Disabled** - Sem acesso direto ao Node no renderer
-- ✅ **Sandbox Mode** - Renderer executado em sandbox
-- ✅ **CSP** - Content Security Policy (em produção)
-- ✅ **Type-Safe IPC** - Comunicação tipada entre processos
-
-## 🧪 Testes
-
-```bash
-# Unit tests
-npm test
-
-# E2E tests
-npm run test:e2e
-
-# Coverage
-npm run test:coverage
-```
-
-> Nota: Testes estão em desenvolvimento
-
-## 📝 Documentação
-
-- [BUILD.md](./BUILD.md) - Guia completo de build e compilação
-- [RELEASE.md](./RELEASE.md) - Processo de releases automáticos
-- [DISTRIBUTION.md](./DISTRIBUTION.md) - Guia de distribuição
-- [CHANGELOG-FEATURES.md](./CHANGELOG-FEATURES.md) - Log de features
-- [CHANGELOG-UI.md](./CHANGELOG-UI.md) - Melhorias de UI
-- [PROGRESS.md](./PROGRESS.md) - Status do projeto
-- [docs/SOUNDS.md](./docs/SOUNDS.md) - Sistema de sons
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Por favor:
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 🐛 Reportar Bugs
-
-Encontrou um bug? [Abra uma issue](https://github.com/ricardopera/pomodoro-focus/issues/new) com:
-- Descrição detalhada do problema
-- Passos para reproduzir
-- Screenshots (se aplicável)
-- Sistema operacional e versão
-
-## 📋 Roadmap
-
-### v1.0 - MVP ✅
-- [x] Timer funcional
-- [x] Interface moderna
-- [x] Temas (Light/Dark/System)
-- [x] Notificações e sons
-- [x] Estatísticas básicas
-- [x] System tray
-
-### v1.1 - Melhorias ✅
-- [x] Power management (prevenir sleep)
-- [x] Testes automatizados
-- [x] Build de produção
-- [x] Instaladores (Windows/macOS/Linux)
-- [x] GitHub Actions para releases automáticos
-
-### v1.2 - Features Avançadas
-- [ ] Sincronização em nuvem
-- [ ] Histórico detalhado de sessões
-- [ ] Gráficos de produtividade
-- [ ] Integração com calendários
-- [ ] Modo de trabalho em equipe
-
-### v2.0 - Futuro
-- [ ] Aplicativo mobile (sincronizado)
-- [ ] Integração com Notion/Trello
-- [ ] Metas e conquistas
-- [ ] Análise de produtividade com IA
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
-
-## 👨‍💻 Autor
-
-**Ricardo Pera**
-
-- GitHub: [@ricardopera](https://github.com/ricardopera)
-- Email: [Seu email]
-
-## 🙏 Agradecimentos
-
-- Técnica Pomodoro criada por Francesco Cirillo
-- Ícones e inspiração da comunidade open-source
-- Electron, React e TypeScript communities
-
-## ⭐ Apoie o Projeto
-
-Se este projeto foi útil para você, considere:
-- ⭐ Dar uma estrela no GitHub
-- 🐛 Reportar bugs
-- 💡 Sugerir novas features
-- 🤝 Contribuir com código
-- ☕ [Comprar um café](https://www.buymeacoffee.com/ricardopera) (opcional)
-
----
-
-<div align="center">
-
-**Feito com ❤️ e ☕ usando a Técnica Pomodoro**
-
-</div>
+MIT — veja [LICENSE](LICENSE).

@@ -1,280 +1,93 @@
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
-import path from 'path';
-import { existsSync } from 'fs';
-import { setupIpcHandlers, cleanupIpcHandlers } from './ipc';
-import { createTray, destroyTray } from './tray';
-import { getSettings } from './store';
+import { app, BrowserWindow } from 'electron';
+import { IPC } from '../shared/constants';
+import type { RemoteCommand } from '../shared/types';
+import { registerIpc, unregisterIpc } from './ipc';
+import { Store } from './store';
+import { AppTray } from './tray';
+import { createMainWindow, isDev } from './window';
+
+// Windows needs this for notifications to carry the app's name and icon.
+app.setAppUserModelId('com.ricardopera.pomodoro-focus');
 
 let mainWindow: BrowserWindow | null = null;
+let tray: AppTray | null = null;
+let store: Store | null = null;
 let isQuitting = false;
 
-// Verbose logging only in development
-const isDev = process.env.NODE_ENV !== 'production';
-
-// Helper for conditional logging
-const log = (...args: any[]) => {
-  if (isDev) {
-    // eslint-disable-next-line no-console
-    console.log(...args);
-  }
-};
-
-const logError = (...args: any[]) => {
-  if (isDev) {
-    // eslint-disable-next-line no-console
-    console.error(...args);
-  }
-};
-
-if (isDev) {
-  app.commandLine.appendSwitch('enable-logging');
-  app.commandLine.appendSwitch('v', '1');
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
 } else {
-  // In production, suppress all console output and hide console window
-  app.commandLine.appendSwitch('disable-logging');
-  app.commandLine.appendSwitch('log-level', '3'); // Only fatal errors
-  
-  // Hide console window in production (Windows only)
-  if (process.platform === 'win32') {
-    // Redirect console output to prevent console window from appearing
-    app.commandLine.appendSwitch('disable-dev-shm-usage');
-    app.commandLine.appendSwitch('no-sandbox');
-  }
+  app.on('second-instance', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  void app.whenReady().then(bootstrap);
 }
 
-// Disable GPU to prevent renderer crashes on some Windows systems
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
+function bootstrap(): void {
+  store = new Store();
+  const settings = store.data.settings;
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logError('[MAIN] Uncaught Exception:', error);
-});
+  mainWindow = createMainWindow(settings.alwaysOnTop);
 
-process.on('unhandledRejection', (reason, promise) => {
-  logError('[MAIN] Unhandled Rejection at:', promise, 'reason:', reason);
-});
+  const sendCommand = (command: RemoteCommand) => {
+    mainWindow?.webContents.send(IPC.command, command);
+  };
 
-app.on('will-quit', () => {
-  log('[MAIN] will-quit event');
-});
+  tray = new AppTray(mainWindow, sendCommand, () => {
+    isQuitting = true;
+  });
+  tray.init();
 
-app.on('quit', () => {
-  log('[MAIN] quit event');
-  ipcMain.removeAllListeners();
-});
-
-function createWindow(): BrowserWindow {
-  log('[MAIN] Creating window...');
-  const settings = getSettings();
-  log('[MAIN] Settings loaded:', settings);
-  log('[MAIN] App is packaged:', app.isPackaged);
-  log('[MAIN] process.resourcesPath:', process.resourcesPath);
-  log('[MAIN] __dirname:', __dirname);
-
-  // Create app icon - try multiple possible locations
-  let iconPath = '';
-  
-  if (app.isPackaged) {
-    // In production, try different possible locations
-    const possiblePaths = [
-      path.join(process.resourcesPath, 'icons', 'app-icon.png'),
-      path.join(process.resourcesPath, 'app.asar.unpacked', 'public', 'icons', 'app-icon.png'),
-      path.join(process.resourcesPath, 'app.asar', 'public', 'icons', 'app-icon.png'),
-      path.join(__dirname, '..', '..', 'public', 'icons', 'app-icon.png'),
-    ];
-    
-    log('[MAIN] Trying to find icon in possible paths:');
-    for (const p of possiblePaths) {
-      log('[MAIN]   Checking:', p);
-      try {
-        if (existsSync(p)) {
-          iconPath = p;
-          log('[MAIN]   ✅ FOUND!');
-          break;
-        } else {
-          log('[MAIN]   ❌ Not found');
-        }
-      } catch (e) {
-        log('[MAIN]   ❌ Error checking:', e);
+  registerIpc({
+    window: mainWindow,
+    store,
+    tray,
+    requestClose: () => {
+      if (store?.data.settings.minimizeToTray) {
+        mainWindow?.hide();
+      } else {
+        isQuitting = true;
+        app.quit();
       }
-    }
-  } else {
-    iconPath = path.join(__dirname, '../../public/icons/app-icon.png');
-    log('[MAIN] Development mode, using:', iconPath);
-  }
-  
-  log('[MAIN] Final icon path:', iconPath);
-  log('[MAIN] Icon file exists:', existsSync(iconPath));
-  
-  // Create native image from icon path
-  const appIcon = iconPath && existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : undefined;
-  if (appIcon && !appIcon.isEmpty()) {
-    const size = appIcon.getSize();
-    log('[MAIN] ✅ Icon loaded successfully, size:', size.width, 'x', size.height);
-  } else {
-    logError('[MAIN] ❌ WARNING: Icon could not be loaded or is empty!');
-    logError('[MAIN] iconPath was:', iconPath);
-  }
-
-  mainWindow = new BrowserWindow({
-    width: 400,
-    height: 600,
-    minWidth: 350,
-    minHeight: 500,
-    frame: false, // Remove frame to hide menu bar
-    resizable: true,
-    show: false, // Don't show until ready
-    backgroundColor: '#1e293b', // Set background color
-    icon: appIcon, // Use nativeImage instead of path
-    webPreferences: {
-      preload: app.isPackaged 
-        ? path.join(__dirname, '..', 'preload', 'index.cjs')
-        : path.join(__dirname, '../preload/index.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true, // Enable sandbox for security
     },
   });
 
-  // Load URL based on environment
-  const ELECTRON_RENDERER_URL = process.env.ELECTRON_RENDERER_URL;
-  log('[MAIN] ELECTRON_RENDERER_URL:', ELECTRON_RENDERER_URL);
-  log('[MAIN] Loading URL...');
-  log('[MAIN] __dirname:', __dirname);
-  log('[MAIN] app.isPackaged:', app.isPackaged);
-
-  if (ELECTRON_RENDERER_URL) {
-    mainWindow.loadURL(ELECTRON_RENDERER_URL);
-    log('[MAIN] Loaded from dev server:', ELECTRON_RENDERER_URL);
-  } else if (app.isPackaged) {
-    // In packaged app, renderer files are in dist/renderer
-    const indexPath = path.join(__dirname, '..', 'renderer', 'index.html');
-    log('[MAIN] Loading from:', indexPath);
-    mainWindow.loadFile(indexPath);
-    log('[MAIN] Loaded from file (packaged)');
-  } else {
-    // Development: load from default Vite port
-    mainWindow.loadURL('http://localhost:5173');
-    log('[MAIN] Loaded from local dev server');
-  }
-
-  log('[MAIN] Window created');
-  
-  // Force set icon after creation (Windows sometimes needs this)
-  // Explicitly set icon after window creation (redundant but ensures it's set)
-  if (appIcon && !appIcon.isEmpty()) {
-    try {
-      mainWindow.setIcon(appIcon);
-      log('[MAIN] Icon explicitly set with nativeImage');
-    } catch (e) {
-      logError('[MAIN] Failed to set icon:', e);
-    }
-  }
-
-  // Open DevTools for debugging (comment out for production)
-  // if (app.isPackaged) {
-  //   mainWindow.webContents.openDevTools({ mode: 'detach' });
-  // }
-
-  // Window event listeners
   mainWindow.on('close', (event) => {
-    log('[MAIN] Window close event, isQuitting:', isQuitting, 'minimizeToTray:', settings.minimizeToTray);
-    
-    // Minimize to tray instead of closing if enabled
-    if (!isQuitting && settings.minimizeToTray) {
-      event.preventDefault();
-      mainWindow?.hide();
-      log('[MAIN] Window hidden (minimized to tray)');
-    }
+    if (isQuitting || !store?.data.settings.minimizeToTray) return;
+    event.preventDefault();
+    mainWindow?.hide();
   });
 
   mainWindow.on('closed', () => {
-    log('[MAIN] Window closed event');
     mainWindow = null;
   });
 
-  // Listen for crashes or errors
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
-    logError('[MAIN] Failed to load:', errorCode, errorDescription);
-  });
-
-  mainWindow.webContents.on('crashed', () => {
-    logError('[MAIN] Renderer process crashed');
-  });
-
-  mainWindow.webContents.on('render-process-gone', (_event, details) => {
-    logError('[MAIN] Renderer process gone:', details);
-    logError('[MAIN] Reason:', details.reason);
-    logError('[MAIN] Exit code:', details.exitCode);
-  });
-
-  mainWindow.webContents.on('did-finish-load', () => {
-    log('[MAIN] Page finished loading');
-    mainWindow?.show();
-    mainWindow?.focus();
-    log('[MAIN] Window shown and focused');
-  });
-
-  mainWindow.webContents.on('dom-ready', () => {
-    log('[MAIN] DOM ready');
-  });
-
-  mainWindow.on('unresponsive', () => {
-    logError('[MAIN] Window became unresponsive');
-  });
-
-  mainWindow.on('responsive', () => {
-    log('[MAIN] Window became responsive again');
-  });
-
-  return mainWindow;
+  if (isDev) {
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+      if (input.key === 'F12') mainWindow?.webContents.toggleDevTools();
+    });
+  }
 }
 
-// App event handlers
-app.whenReady().then(() => {
-  log('[MAIN] App is ready');
-  
-  createWindow();
-  log('[MAIN] IPC handlers setup');
-  if (mainWindow) {
-    setupIpcHandlers(mainWindow);
-  }
+app.on('before-quit', () => {
+  isQuitting = true;
+  store?.flush();
+});
 
-  // Tray integration
-  if (mainWindow) {
-    createTray(mainWindow);
-    log('[MAIN] Tray created');
-  }
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    } else if (mainWindow) {
-      mainWindow.show();
-    }
-  });
+app.on('will-quit', () => {
+  unregisterIpc();
+  tray?.destroy();
 });
 
 app.on('window-all-closed', () => {
-  log('[MAIN] window-all-closed event, platform:', process.platform);
-  
-  // Commented out for debugging - allows app to quit on window close
-  // if (process.platform !== 'darwin') {
-  //   app.quit();
-  // }
+  if (process.platform !== 'darwin') app.quit();
 });
 
-app.on('before-quit', () => {
-  log('[MAIN] before-quit event');
-  isQuitting = true;
-  cleanupIpcHandlers();
-  destroyTray();
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) bootstrap();
 });
-
-// Quit when all windows are closed (except on macOS)
-app.on('will-quit', () => {
-  log('[MAIN] App will quit');
-  ipcMain.removeAllListeners();
-});
-

@@ -1,111 +1,46 @@
-import { useState, useEffect } from 'react';
-import { useSettings, useTimer, useStatistics } from './hooks';
-import { TimerDisplay } from './components/TimerDisplay';
-import { TimerControls } from './components/TimerControls';
-import { StatisticsView } from './components/StatisticsView';
-import { SettingsView } from './components/SettingsView';
-import './App.css';
+import { useEffect, useState } from 'react';
+import { Workspace } from './Workspace';
+import { api } from './api';
+import { DEFAULT_DATA } from '../shared/constants';
+import { sanitizeSettings } from '../shared/pomodoro';
+import type { AppData } from '../shared/types';
 
-type Tab = 'timer' | 'statistics' | 'settings';
-
+/**
+ * Loads the saved state once, then hands over to the workspace so every
+ * screen can start from real data instead of guessing.
+ */
 export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('timer');
-  const { settings, updateSettings, resetSettings } = useSettings();
-  const { timerState, isLoading, startTimer, pauseTimer, resumeTimer, resetTimer } = useTimer();
-  const { statistics, isLoading: statsLoading, reload: reloadStats } = useStatistics();
+  const [data, setData] = useState<AppData | null>(null);
 
-  // Apply theme on mount and when settings change
   useEffect(() => {
-    if (!settings) return;
-    
-    const theme = settings.theme;
-    const root = document.documentElement;
-    
-    if (theme === 'system') {
-      // Remove data-theme to let CSS media query handle it
-      root.removeAttribute('data-theme');
-    } else {
-      root.setAttribute('data-theme', theme);
-    }
-  }, [settings]);
+    let cancelled = false;
+    api
+      .loadData()
+      .then((loaded) => {
+        if (cancelled) return;
+        setData({
+          ...DEFAULT_DATA,
+          ...loaded,
+          settings: sanitizeSettings(loaded?.settings),
+        });
+      })
+      .catch((error) => {
+        console.error('[app] could not load data:', error);
+        if (!cancelled) setData(structuredClone(DEFAULT_DATA));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handleMinimize = () => {
-    window.electronAPI.minimize();
-  };
-
-  const handleClose = () => {
-    window.electronAPI.close();
-  };
-
-  return (
-    <div className="app">
-      {/* Custom title bar */}
-      <div className="app-titlebar">
-        <div className="app-titlebar-title">🍅 Pomodoro Focus</div>
-        <div className="app-titlebar-controls">
-          <button className="titlebar-button minimize" onClick={handleMinimize} title="Minimizar">
-            −
-          </button>
-          <button className="titlebar-button close" onClick={handleClose} title="Fechar">
-            ×
-          </button>
-        </div>
+  if (!data) {
+    return (
+      <div className="splash">
+        <span className="splash__pulse" aria-hidden />
+        <p>Pomodoro Focus</p>
       </div>
+    );
+  }
 
-      <nav className="app-nav">
-        <button
-          className={`nav-tab ${activeTab === 'timer' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timer')}
-        >
-          ⏱️ Timer
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'statistics' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('statistics');
-            reloadStats();
-          }}
-        >
-          📊 Estatísticas
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          ⚙️ Configurações
-        </button>
-      </nav>
-
-      <main className="app-content">
-        {activeTab === 'timer' && (
-          <div className="timer-view">
-            <TimerDisplay timerState={timerState} />
-            <TimerControls
-              timerState={timerState}
-              onStart={startTimer}
-              onPause={pauseTimer}
-              onResume={resumeTimer}
-              onReset={resetTimer}
-              isLoading={isLoading}
-            />
-            <div className="sessions-indicator">
-              <span>Sessões completas: {timerState.sessionsCompleted}/4</span>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'statistics' && (
-          <StatisticsView statistics={statistics} isLoading={statsLoading} />
-        )}
-
-        {activeTab === 'settings' && (
-          <SettingsView
-            settings={settings}
-            onUpdate={updateSettings}
-            onReset={resetSettings}
-          />
-        )}
-      </main>
-    </div>
-  );
+  return <Workspace initialData={data} />;
 }
