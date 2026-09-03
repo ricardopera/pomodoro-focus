@@ -53,16 +53,9 @@ jobs:
         run: npm ci
 
       - name: Build Windows executables
-        run: npm run dist:win
+        run: npm run build:prod && npx electron-builder --win --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Post-build GUI mode fix
-        shell: pwsh
-        run: |
-          Write-Host "Running post-build fix script..."
-          .\scripts\post-build-fix.ps1
 
       - name: Verify executable
         shell: pwsh
@@ -190,52 +183,50 @@ jobs:
           name: 🍅 Pomodoro Focus ${{ needs.get-version.outputs.version }}
           body: |
             ## 🍅 Pomodoro Focus ${{ needs.get-version.outputs.version }}
-            
-            ### 🎉 Release Highlights
-            
-            Um timer Pomodoro moderno e eficiente para Windows, Linux e macOS, construído com Electron, React e TypeScript.
-            
-            #### ✨ Features
-            
-            - ⏱️ Timer Pomodoro completo com sessões de foco e pausas
-            - 🎨 Temas modernos (Light/Dark/System)
-            - 🪟 Interface limpa com janela frameless
-            - 📊 Estatísticas de produtividade
-            - 🔔 Notificações nativas
-            - 🔊 Sistema de sons
-            - 📍 System tray com minimize to tray
-            - 💾 Persistência de configurações e estado
-            
-            #### 📥 Downloads
-            
-            **Windows:**
-            - `Pomodoro Focus Setup ${{ needs.get-version.outputs.version_number }}.exe` - Instalador NSIS (recomendado)
-            - `PomodoroFocus-Portable-${{ needs.get-version.outputs.version_number }}.exe` - Versão portátil
-            
-            **Linux:**
-            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}.AppImage` - Universal (recomendado)
-            - `pomodoro-focus_${{ needs.get-version.outputs.version_number }}_amd64.deb` - Debian/Ubuntu
-            
-            **macOS:**
-            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}.dmg` - Instalador DMG
-            - `Pomodoro Focus-${{ needs.get-version.outputs.version_number }}-mac.zip` - Arquivo ZIP
-            
-            #### 🚀 Como Usar
-            
-            1. Baixe o executável apropriado para seu sistema operacional
-            2. Instale ou execute o aplicativo
-            3. Configure suas preferências na aba "Configurações"
-            4. Comece a usar a técnica Pomodoro!
-            
+
+            Um Pomodoro para desktop feito para uma coisa só: você trabalhar 25 minutos
+            sem ser interrompido — e saber depois no que esse tempo foi gasto.
+
+            #### ⏱️ A técnica completa
+
+            - Foco, pausa curta e pausa longa com durações configuráveis (25 / 5 / 15 por padrão)
+            - Pausa longa automática a cada N sessões, com os pontinhos do ciclo abaixo do relógio
+            - Início automático de pausas e/ou do próximo foco, pausar, reiniciar, pular e +5 minutos
+            - Relógio ancorado no horário real: não atrasa em segundo plano nem depois de suspender
+              o computador, e uma sessão em andamento é retomada se você fechar e reabrir o app
+
+            #### ✍️ Cada sessão tem nome e descrição
+
+            - Campo "No que você está trabalhando?" com sugestões dos nomes já usados
+            - Descrição opcional para o objetivo ou o próximo passo, editável depois no histórico
+            - Tarefas com estimativa de pomodoros: focar em uma preenche a sessão e sobe o contador
+            - Estatísticas mostram **onde o seu foco foi parar**, agrupado pelo nome das sessões
+
+            #### 🌙 Sem distrações
+
+            - Janela sem moldura do sistema, com o tempo restante como única coisa em destaque
+            - Durante o foco a interface escurece e só o relógio permanece
+            - Modo compacto sempre à frente, bandeja do sistema, notificações nativas e barra de
+              progresso na barra de tarefas
+            - Sons sintetizados (sinos suaves, tique-taque opcional) e quatro temas
+
+            #### 🔒 Seus dados são seus
+
+            Tudo fica em um arquivo JSON dentro da pasta do usuário
+            (`%APPDATA%\Pomodoro Focus\pomodoro-data.json`). O app não faz nenhuma requisição
+            de rede — sem conta, sem telemetria, sem sincronização.
+
+            #### 📥 Downloads (Windows x64)
+
+            - `PomodoroFocus-Setup-${{ needs.get-version.outputs.version_number }}.exe` — instalador (recomendado)
+            - `PomodoroFocus-Portable-${{ needs.get-version.outputs.version_number }}.exe` — versão portátil, sem instalação
+
             #### 📝 Notas
-            
-            - **Windows**: Na primeira execução, o Windows Defender pode mostrar um aviso. Clique em "Mais informações" → "Executar mesmo assim"
-            - **macOS**: Pode ser necessário ir em "Preferências do Sistema" → "Segurança e Privacidade" para permitir a execução
-            - **Linux**: Para AppImage, torne executável com `chmod +x` antes de executar
-            
-            ---
-            
-            **Desenvolvido com ❤️ usando a Técnica Pomodoro**
+
+            - O executável não é assinado digitalmente: na primeira execução o SmartScreen pode
+              pedir "Mais informações" → "Executar assim mesmo"
+            - Atalhos: `Espaço` inicia/pausa · `R` reinicia · `S` pula · `M` modo compacto ·
+              `1` `2` `3` alternam entre foco, pausa curta e pausa longa
           draft: false
           prerelease: false
           files: |
